@@ -6,16 +6,26 @@ class frog : public Gtk::Window {
 		frog();
 
 	private:
-		std::string previous_path;
+		std::string current_path;
+		std::vector<std::string> back_paths;
+		std::vector<std::string> next_paths;
 
 		Gtk::Box box_main;
 		Gtk::Box box_sidebar;
 		Gtk::Box box_container;
+
+		Gtk::Box box_navigation;
+		Gtk::Button button_previous;
+		Gtk::Button button_next;
+		Gtk::Button button_up;
+		Gtk::Button button_search;
+
 		Gtk::Entry entry_path;
 		Gtk::ScrolledWindow scrolled_window_files;
 		Gtk::FlowBox flowbox_files;
 
 		void on_search_done();
 		void on_child_activated(Gtk::FlowBoxChild* child);
+		void navbar_setup();
 		void populate_files(const std::string &path);
 };
