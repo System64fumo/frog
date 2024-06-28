@@ -12,12 +12,12 @@ frog::frog() {
 	show();
 
 	// TODO: Add navigation buttons
-	//box_main.append(box_sidebar);
-	//box_sidebar.set_size_request(175, -1);
+	box_main.append(box_sidebar);
+	box_sidebar.set_size_request(175, -1);
+	box_sidebar.set_orientation(Gtk::Orientation::VERTICAL);
+	box_sidebar.append(box_navigation);
 
-	box_main.append(box_container);
-	box_container.set_hexpand(true);
-	box_container.set_orientation(Gtk::Orientation::VERTICAL);
+	navbar_setup();
 
 	box_container.append(entry_path);
 	entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_search_done));
@@ -48,6 +48,53 @@ frog::frog() {
 	// TODO: Add style support
 }
 
+void frog::navbar_setup() {
+	box_navigation.set_halign(Gtk::Align::CENTER);
+	box_navigation.append(button_previous);
+	button_previous.set_icon_name("go-previous-symbolic");
+	button_previous.set_sensitive(false);
+	button_previous.signal_clicked().connect([&]() {
+		std::string new_path = back_paths.back();
+		entry_path.set_text(new_path);
+		on_search_done();
+		next_paths.push_back(back_paths.back());
+		back_paths.pop_back();
+		back_paths.pop_back();
+		button_previous.set_sensitive((back_paths.size() != 1));
+		button_next.set_sensitive(next_paths.size() != 0);
+	});
+
+
+	box_navigation.append(button_next);
+	button_next.set_icon_name("go-next-symbolic");
+	button_next.set_sensitive(false);
+	button_next.signal_clicked().connect([&]() {
+		std::string new_path = next_paths.back();
+		next_paths.pop_back();
+		entry_path.set_text(new_path);
+		on_search_done();
+		button_next.set_sensitive(next_paths.size() != 0);
+	});
+
+	// TODO: Add checks for up button sensitivity
+	box_navigation.append(button_up);
+	button_up.set_icon_name("go-up-symbolic");
+	button_up.set_sensitive(true);
+	button_up.signal_clicked().connect([&]() {
+		std::filesystem::path path = current_path;
+		std::filesystem::path parent_path = path.parent_path();
+		entry_path.set_text(parent_path.string());
+		on_search_done();
+	});
+
+	//box_navigation.append(button_search);
+	//button_search.set_icon_name("search-symbolic");
+
+	box_main.append(box_container);
+	box_container.set_hexpand(true);
+	box_container.set_orientation(Gtk::Orientation::VERTICAL);
+}
+
 void frog::on_search_done() {
 	std::string path_str = entry_path.get_buffer()->get_text().raw();
 	std::filesystem::path p = path_str;
@@ -62,17 +109,20 @@ void frog::on_search_done() {
 	if (path_str.back() == '/' && path_str != "/")
 		path_str.pop_back();
 
-	if (path_str == previous_path)
+	if (path_str == current_path)
 		return;
 
 	if (!std::filesystem::exists(path_str)) {
-		entry_path.set_text(previous_path);
+		entry_path.set_text(current_path);
 		return;
 	}
 
 	entry_path.set_text(path_str);
-	previous_path = path_str;
+	back_paths.push_back(current_path);
+	current_path = path_str;
 	populate_files(path_str);
+	button_previous.set_sensitive(back_paths.size() != 1);
+	button_next.set_sensitive(next_paths.size() != 0);
 }
 
 void frog::on_child_activated(Gtk::FlowBoxChild* child) {
@@ -80,7 +130,9 @@ void frog::on_child_activated(Gtk::FlowBoxChild* child) {
 	std::string path = entry_path.get_buffer()->get_text().raw();
 
 	if (entry->is_directory) {
-		entry_path.set_text(path + "/" + entry->label.get_text());
+		std::string new_path = path + "/" + entry->label.get_text();
+		entry_path.set_text(new_path);
+		next_paths.clear();
 		on_search_done();
 	}
 	else {
