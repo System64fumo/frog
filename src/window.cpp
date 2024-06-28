@@ -1,6 +1,7 @@
 #include "main.hpp"
 #include "window.hpp"
 #include "file.hpp"
+#include "css.hpp"
 
 #include <iostream>
 #include <filesystem>
@@ -45,7 +46,10 @@ frog::frog() {
 	entry_path.set_text(getenv("HOME"));
 	on_search_done();
 
-	// TODO: Add style support
+	// Load custom css
+	std::string home_dir = getenv("HOME");
+	std::string css_path = home_dir + "/.config/sys64/frog.css";
+	css_loader css(css_path, this);
 }
 
 void frog::navbar_setup() {
