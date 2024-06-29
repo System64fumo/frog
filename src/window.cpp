@@ -35,6 +35,7 @@ frog::frog() {
 	scrolled_window_files.add_controller(click_gesture);
 
 	flowbox_files.signal_child_activated().connect(sigc::mem_fun(*this, &frog::on_child_activated));
+	flowbox_files.set_sort_func(sigc::mem_fun(*this, &frog::sort_func));
 	flowbox_files.set_activate_on_single_click(false);
 	flowbox_files.set_valign(Gtk::Align::START);
 	flowbox_files.set_homogeneous(true);
@@ -127,6 +128,21 @@ void frog::on_search_done() {
 	populate_files(path_str);
 	button_previous.set_sensitive(back_paths.size() != 1);
 	button_next.set_sensitive(next_paths.size() != 0);
+}
+
+int frog::sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2) {
+	auto item1 = dynamic_cast<file_entry*>(child1->get_child());
+	auto item2 = dynamic_cast<file_entry*>(child2->get_child());
+
+	if (item1->is_directory != item2->is_directory)
+		return item1->is_directory ? -1 : 1;
+
+	if (item1->label.get_text()[0] == '.' && item2->label.get_text()[0] != '.')
+		return 1;
+	if (item1->label.get_text()[0] != '.' && item2->label.get_text()[0] == '.')
+		return -1;
+
+	return item1->label.get_text().compare(item2->label.get_text());
 }
 
 void frog::on_child_activated(Gtk::FlowBoxChild* child) {
