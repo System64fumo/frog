@@ -12,18 +12,17 @@ frog::frog() {
 	set_child(box_main);
 	show();
 
-	// TODO: Add navigation buttons
-	box_main.append(box_sidebar);
-	box_sidebar.set_size_request(175, -1);
-	box_sidebar.set_orientation(Gtk::Orientation::VERTICAL);
-	box_sidebar.append(box_navigation);
-
 	navbar_setup();
 	sidebar_setup();
 
+	box_main.append(box_container);
+	box_container.get_style_context()->add_class("file_container");
+	box_container.set_hexpand(true);
+	box_container.set_orientation(Gtk::Orientation::VERTICAL);
+
 	box_container.append(entry_path);
 	entry_path.get_style_context()->add_class("path_bar");
-	entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_search_done));
+	entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_entry_done));
 
 	box_container.append(scrolled_window_files);
 	scrolled_window_files.set_child(flowbox_files);
@@ -47,7 +46,7 @@ frog::frog() {
 
 	//std::filesystem::current_path().string() // TODO: Add option to use this
 	entry_path.set_text(getenv("HOME"));
-	on_search_done();
+	on_entry_done();
 
 	// Load custom css
 	std::string home_dir = getenv("HOME");
@@ -65,8 +64,7 @@ void frog::navbar_setup() {
 	button_previous.set_sensitive(false);
 	button_previous.signal_clicked().connect([&]() {
 		std::string new_path = back_paths.back();
-		entry_path.set_text(new_path);
-		on_search_done();
+		populate_files(new_path);
 		next_paths.push_back(back_paths.back());
 		back_paths.pop_back();
 		back_paths.pop_back();
@@ -81,8 +79,7 @@ void frog::navbar_setup() {
 	button_next.signal_clicked().connect([&]() {
 		std::string new_path = next_paths.back();
 		next_paths.pop_back();
-		entry_path.set_text(new_path);
-		on_search_done();
+		populate_files(new_path);
 		button_next.set_sensitive(next_paths.size() != 0);
 	});
 
@@ -94,23 +91,22 @@ void frog::navbar_setup() {
 	button_up.signal_clicked().connect([&]() {
 		std::filesystem::path path = current_path;
 		std::filesystem::path parent_path = path.parent_path();
-		entry_path.set_text(parent_path.string());
-		on_search_done();
+		populate_files(parent_path.string());
 	});
 
 	//box_navigation.append(button_search);
 	//button_search.get_style_context()->add_class("flat");
 	//button_search.set_icon_name("search-symbolic");
-
-	box_main.append(box_container);
-	box_container.get_style_context()->add_class("file_container");
-	box_container.set_hexpand(true);
-	box_container.set_orientation(Gtk::Orientation::VERTICAL);
 }
 
 void frog::sidebar_setup() {
+	box_main.append(box_sidebar);
+	box_sidebar.set_size_request(175, -1);
+	box_sidebar.set_orientation(Gtk::Orientation::VERTICAL);
+	box_sidebar.append(box_navigation);
 	box_sidebar.get_style_context()->add_class("sidebar");
 	box_sidebar.append(scrolled_window_places);
+
 	scrolled_window_places.set_child(flowbox_places);
 	scrolled_window_places.set_vexpand(true);
 	flowbox_places.set_valign(Gtk::Align::START);
@@ -141,34 +137,8 @@ void frog::sidebar_setup() {
 	}
 }
 
-void frog::on_search_done() {
-	std::string path_str = entry_path.get_buffer()->get_text().raw();
-	std::filesystem::path p = path_str;
-
-	// Cleanup code that doesn't work that well
-	p = p.lexically_normal();
-
-	if (p.filename() == ".")
-		p = p.parent_path();
-
-	path_str = p.string();
-	if (path_str.back() == '/' && path_str != "/")
-		path_str.pop_back();
-
-	if (path_str == current_path)
-		return;
-
-	if (!std::filesystem::exists(path_str)) {
-		entry_path.set_text(current_path);
-		return;
-	}
-
-	entry_path.set_text(path_str);
-	back_paths.push_back(current_path);
-	current_path = path_str;
-	populate_files(path_str);
-	button_previous.set_sensitive(back_paths.size() != 1);
-	button_next.set_sensitive(next_paths.size() != 0);
+void frog::on_entry_done() {
+	populate_files(entry_path.get_buffer()->get_text().raw());
 }
 
 int frog::sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2) {
@@ -192,9 +162,8 @@ void frog::on_child_activated(Gtk::FlowBoxChild* child) {
 
 	if (entry->is_directory) {
 		std::string new_path = path + "/" + entry->label.get_text();
-		entry_path.set_text(new_path);
 		next_paths.clear();
-		on_search_done();
+		populate_files(new_path);
 	}
 	else {
 		std::string cmd = "xdg-open " + path + "/" + entry->label.get_text();
@@ -203,6 +172,35 @@ void frog::on_child_activated(Gtk::FlowBoxChild* child) {
 }
 
 void frog::populate_files(const std::string &path) {
+	std::filesystem::path fs_path = path;
+
+	if (fs_path.filename() == ".") {
+		fs_path = fs_path.parent_path();
+		entry_path.set_text(fs_path.string());
+	}
+
+	fs_path = fs_path.lexically_normal();
+
+	std::string path_str = fs_path.string();
+	if (path_str.back() == '/' && path_str != "/") {
+		path_str.pop_back();
+		path_str.pop_back();
+	}
+
+	if (path_str == current_path)
+		return;
+
+	if (!std::filesystem::exists(path_str)) {
+		entry_path.set_text(current_path);
+		return;
+	}
+
+	back_paths.push_back(current_path);
+	current_path = path_str;
+	button_previous.set_sensitive(back_paths.size() != 1);
+	button_next.set_sensitive(next_paths.size() != 0);
+
+	entry_path.set_text(path);
 	flowbox_files.remove_all();
 
 	// TODO: Make this async
