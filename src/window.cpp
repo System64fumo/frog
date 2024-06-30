@@ -19,6 +19,7 @@ frog::frog() {
 	box_sidebar.append(box_navigation);
 
 	navbar_setup();
+	sidebar_setup();
 
 	box_container.append(entry_path);
 	entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_search_done));
@@ -98,6 +99,37 @@ void frog::navbar_setup() {
 	box_main.append(box_container);
 	box_container.set_hexpand(true);
 	box_container.set_orientation(Gtk::Orientation::VERTICAL);
+}
+
+void frog::sidebar_setup() {
+	box_sidebar.append(scrolled_window_places);
+	scrolled_window_places.set_child(flowbox_places);
+	scrolled_window_places.set_vexpand(true);
+	flowbox_places.set_valign(Gtk::Align::START);
+	flowbox_places.set_max_children_per_line(1);
+
+	// Sample items
+	// TODO: Actually read pinned items and add them here
+	std::vector<std::string> pinned_places = {
+		"Home", "Desktop", "Documents", "Downloads"
+	};
+
+	// TODO: Add on_child_activated stuff to this flowbox too;
+	// TODO: Ideally replace this with it's own class
+	for (const auto& text : pinned_places) {
+		Gtk::Box *box = Gtk::make_managed<Gtk::Box>();
+		Gtk::Label *label = Gtk::make_managed<Gtk::Label>(text);
+		Gtk::Image *image = Gtk::make_managed<Gtk::Image>();
+
+		box->append(*image);
+		box->append(*label);
+		flowbox_places.append(*box);
+
+		label->set_justify(Gtk::Justification::LEFT);
+		image->set_pixel_size(16);
+		image->set_from_icon_name("folder-symbolic");
+		image->set_margin_end(5);
+	}
 }
 
 void frog::on_search_done() {
