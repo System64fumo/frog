@@ -28,7 +28,7 @@ class frog : public Gtk::Window {
 		Gtk::ScrolledWindow scrolled_window_files;
 		Gtk::FlowBox flowbox_files;
 
-		void on_search_done();
+		void on_entry_done();
 		int sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2);
 		void on_child_activated(Gtk::FlowBoxChild* child);
 		void navbar_setup();
