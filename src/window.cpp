@@ -22,6 +22,7 @@ frog::frog() {
 	sidebar_setup();
 
 	box_container.append(entry_path);
+	entry_path.get_style_context()->add_class("path_bar");
 	entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_search_done));
 
 	box_container.append(scrolled_window_files);
@@ -57,6 +58,9 @@ frog::frog() {
 void frog::navbar_setup() {
 	box_navigation.set_halign(Gtk::Align::CENTER);
 	box_navigation.append(button_previous);
+	box_navigation.get_style_context()->add_class("navbar");
+
+	button_previous.get_style_context()->add_class("flat");
 	button_previous.set_icon_name("go-previous-symbolic");
 	button_previous.set_sensitive(false);
 	button_previous.signal_clicked().connect([&]() {
@@ -70,8 +74,8 @@ void frog::navbar_setup() {
 		button_next.set_sensitive(next_paths.size() != 0);
 	});
 
-
 	box_navigation.append(button_next);
+	button_next.get_style_context()->add_class("flat");
 	button_next.set_icon_name("go-next-symbolic");
 	button_next.set_sensitive(false);
 	button_next.signal_clicked().connect([&]() {
@@ -84,6 +88,7 @@ void frog::navbar_setup() {
 
 	// TODO: Add checks for up button sensitivity
 	box_navigation.append(button_up);
+	button_up.get_style_context()->add_class("flat");
 	button_up.set_icon_name("go-up-symbolic");
 	button_up.set_sensitive(true);
 	button_up.signal_clicked().connect([&]() {
@@ -94,14 +99,17 @@ void frog::navbar_setup() {
 	});
 
 	//box_navigation.append(button_search);
+	//button_search.get_style_context()->add_class("flat");
 	//button_search.set_icon_name("search-symbolic");
 
 	box_main.append(box_container);
+	box_container.get_style_context()->add_class("file_container");
 	box_container.set_hexpand(true);
 	box_container.set_orientation(Gtk::Orientation::VERTICAL);
 }
 
 void frog::sidebar_setup() {
+	box_sidebar.get_style_context()->add_class("sidebar");
 	box_sidebar.append(scrolled_window_places);
 	scrolled_window_places.set_child(flowbox_places);
 	scrolled_window_places.set_vexpand(true);
@@ -121,6 +129,7 @@ void frog::sidebar_setup() {
 		Gtk::Label *label = Gtk::make_managed<Gtk::Label>(text);
 		Gtk::Image *image = Gtk::make_managed<Gtk::Image>();
 
+		box->get_style_context()->add_class("place");
 		box->append(*image);
 		box->append(*label);
 		flowbox_places.append(*box);
