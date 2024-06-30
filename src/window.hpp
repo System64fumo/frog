@@ -1,6 +1,7 @@
 #pragma once
 #include <gtkmm.h>
-
+#include <atomic>
+#include <future>
 
 class frog : public Gtk::Window {
 	public:
@@ -10,6 +11,9 @@ class frog : public Gtk::Window {
 		std::string current_path;
 		std::vector<std::string> back_paths;
 		std::vector<std::string> next_paths;
+
+		std::atomic<bool> stop_flag;
+		std::future<void> async_task;
 
 		Gtk::Box box_main;
 		Gtk::Box box_sidebar;

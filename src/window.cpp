@@ -203,9 +203,19 @@ void frog::populate_files(const std::string &path) {
 	entry_path.set_text(path);
 	flowbox_files.remove_all();
 
-	// TODO: Make this async
-	for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(path)) {
-		file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
-		flowbox_files.append(*f_entry);
+	if (async_task.valid()) {
+		stop_flag.store(true);
+		async_task.wait();
 	}
+
+	stop_flag.store(false);
+	async_task = std::async(std::launch::async, [this, path]() {
+		for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(path)) {
+			if (stop_flag.load())
+				break;
+
+			file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
+			flowbox_files.append(*f_entry);
+		}
+	});
 }
