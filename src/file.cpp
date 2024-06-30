@@ -1,6 +1,7 @@
 #include "file.hpp"
 
 #include <iostream>
+#include <magic.h>
 
 file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	std::string name = entry.path().filename().string();
@@ -21,9 +22,20 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 
 	if (is_directory)
 		image.set_from_icon_name("default-folder");
-	else
-		image.set_from_icon_name("application-blank");
-	// TODO: Handle different file mime types
+	else {
+		// TODO: Maybe run this in another thread too?
+		// TODO: Improve mime type handling
+		magic_t magic = magic_open(MAGIC_MIME_TYPE);
+		magic_load(magic, nullptr);
+		const char* mime_type = magic_file(magic, entry.path().c_str());
+		std::string result(mime_type);
+		magic_close(magic);
+		std::replace(result.begin(), result.end(), '/', '-');
+		// This does not always correspond to a right mimetype
+		// Maybe use a manual pre defined list instead?
+
+		image.set_from_icon_name(result);
+	}
 	// TODO: Handle previews
 	// TODO: Handle mounts
 }
