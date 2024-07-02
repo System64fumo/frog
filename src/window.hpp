@@ -32,10 +32,14 @@ class frog : public Gtk::Window {
 		Gtk::ScrolledWindow scrolled_window_files;
 		Gtk::FlowBox flowbox_files;
 
+		Gtk::PopoverMenu popovermenu_context_menu;
+
 		void on_entry_done();
 		int sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2);
 		void on_child_activated(Gtk::FlowBoxChild* child);
+		void on_right_clicked(const int &n_press, const double &x, const double &y, Gtk::FlowBoxChild *flowbox_child);
 		void navbar_setup();
 		void sidebar_setup();
+		void context_menu_setup();
 		void populate_files(const std::string &path);
 };
