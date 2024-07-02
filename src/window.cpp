@@ -44,6 +44,8 @@ frog::frog() {
 	flowbox_files.set_row_spacing(5);
 	flowbox_files.set_column_spacing(5);
 
+	context_menu_setup();
+
 	//std::filesystem::current_path().string() // TODO: Add option to use this
 	entry_path.set_text(getenv("HOME"));
 	on_entry_done();
@@ -137,6 +139,14 @@ void frog::sidebar_setup() {
 	}
 }
 
+void frog::context_menu_setup() {
+	auto menu = Gio::Menu::create();
+	menu->append("Test 1", "test1");
+	menu->append("Test 2", "test2");
+	menu->append("Test 3", "test3");
+	popovermenu_context_menu.set_menu_model(menu);
+}
+
 void frog::on_entry_done() {
 	populate_files(entry_path.get_buffer()->get_text().raw());
 }
@@ -169,6 +179,17 @@ void frog::on_child_activated(Gtk::FlowBoxChild* child) {
 		std::string cmd = "xdg-open \"" + path + '/' + entry->label.get_text() + '"';
 		system(cmd.c_str());
 	}
+}
+
+void frog::on_right_clicked(const int &n_press,
+							const double &x,
+							const double &y,
+							Gtk::FlowBoxChild *flowbox_child) {
+	// This looks horrible, I know..
+	flowbox_files.select_child(*flowbox_child);
+	popovermenu_context_menu.unparent();
+	popovermenu_context_menu.set_parent(*flowbox_child);
+	popovermenu_context_menu.popup();
 }
 
 void frog::populate_files(const std::string &path) {
@@ -214,8 +235,15 @@ void frog::populate_files(const std::string &path) {
 			if (stop_flag.load())
 				break;
 
+			Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
 			file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
-			flowbox_files.append(*f_entry);
+			fbox_child->set_child(*f_entry);
+			flowbox_files.append(*fbox_child);
+
+			Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
+			click_gesture->set_button(GDK_BUTTON_SECONDARY);
+			click_gesture->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &frog::on_right_clicked), fbox_child));
+			f_entry->add_controller(click_gesture);
 		}
 	});
 }
