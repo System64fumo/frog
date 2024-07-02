@@ -166,7 +166,7 @@ void frog::on_child_activated(Gtk::FlowBoxChild* child) {
 		populate_files(new_path);
 	}
 	else {
-		std::string cmd = "xdg-open " + path + "/" + entry->label.get_text();
+		std::string cmd = "xdg-open \"" + path + '/' + entry->label.get_text() + '"';
 		system(cmd.c_str());
 	}
 }
