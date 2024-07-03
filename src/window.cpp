@@ -2,6 +2,7 @@
 #include "window.hpp"
 #include "file.hpp"
 #include "css.hpp"
+#include "config_parser.hpp"
 
 #include <iostream>
 #include <filesystem>
@@ -114,17 +115,17 @@ void frog::sidebar_setup() {
 	flowbox_places.set_valign(Gtk::Align::START);
 	flowbox_places.set_max_children_per_line(1);
 
-	// Sample items
-	// TODO: Actually read pinned items and add them here
-	std::vector<std::string> pinned_places = {
-		"Home", "Desktop", "Documents", "Downloads"
-	};
+	// Pinned items
+	config_parser config(std::string(getenv("HOME")) + "/.config/sys64/frog.conf");
+	std::vector<std::string> keys = config.get_keys("pinned");
 
 	// TODO: Add on_child_activated stuff to this flowbox too;
 	// TODO: Ideally replace this with it's own class
-	for (const auto& text : pinned_places) {
+	for (const auto &key : keys) {
+		std::string cfg_pinned_place = config.get_value("pinned", key);
+
 		Gtk::Box *box = Gtk::make_managed<Gtk::Box>();
-		Gtk::Label *label = Gtk::make_managed<Gtk::Label>(text);
+		Gtk::Label *label = Gtk::make_managed<Gtk::Label>(key);
 		Gtk::Image *image = Gtk::make_managed<Gtk::Image>();
 
 		box->get_style_context()->add_class("place");
