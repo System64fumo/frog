@@ -141,10 +141,25 @@ void frog::sidebar_setup() {
 }
 
 void frog::context_menu_setup() {
+	// TODO: Separate this into file and folder menus.
 	auto menu = Gio::Menu::create();
-	menu->append("Test 1", "test1");
-	menu->append("Test 2", "test2");
-	menu->append("Test 3", "test3");
+	menu->append("Test 1", "popup.test1");
+	menu->append("Test 2", "popup.test2");
+	menu->append("Test 3", "popup.test3");
+
+	auto action_group = Gio::SimpleActionGroup::create();
+	action_group->add_action("test1", [](){
+		std::cout << "Clicked: test1" << std::endl;
+	});
+	action_group->add_action("test2", [](){
+		std::cout << "Clicked: test2" << std::endl;
+	});
+	action_group->add_action("test3", [](){
+		std::cout << "Clicked: test3" << std::endl;
+	});
+	insert_action_group("popup", action_group);
+
+	// TODO: Switch menus depending on the type of thing being right clicked.
 	popovermenu_context_menu.set_menu_model(menu);
 }
 
