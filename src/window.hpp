@@ -36,7 +36,8 @@ class frog : public Gtk::Window {
 
 		void on_entry_done();
 		int sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2);
-		void on_child_activated(Gtk::FlowBoxChild* child);
+		void on_filebox_child_activated(Gtk::FlowBoxChild* child);
+		void on_places_child_activated(Gtk::FlowBoxChild* child);
 		void on_right_clicked(const int &n_press, const double &x, const double &y, Gtk::FlowBoxChild *flowbox_child);
 		void navbar_setup();
 		void sidebar_setup();

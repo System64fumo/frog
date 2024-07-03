@@ -1,5 +1,6 @@
 #include "main.hpp"
 #include "window.hpp"
+#include "place.hpp"
 #include "file.hpp"
 #include "css.hpp"
 #include "config_parser.hpp"
@@ -36,7 +37,7 @@ frog::frog() {
 	});
 	scrolled_window_files.add_controller(click_gesture);
 
-	flowbox_files.signal_child_activated().connect(sigc::mem_fun(*this, &frog::on_child_activated));
+	flowbox_files.signal_child_activated().connect(sigc::mem_fun(*this, &frog::on_filebox_child_activated));
 	flowbox_files.set_sort_func(sigc::mem_fun(*this, &frog::sort_func));
 	flowbox_files.set_activate_on_single_click(false);
 	flowbox_files.set_valign(Gtk::Align::START);
@@ -119,25 +120,13 @@ void frog::sidebar_setup() {
 	config_parser config(std::string(getenv("HOME")) + "/.config/sys64/frog.conf");
 	std::vector<std::string> keys = config.get_keys("pinned");
 
-	// TODO: Add on_child_activated stuff to this flowbox too;
-	// TODO: Ideally replace this with it's own class
 	for (const auto &key : keys) {
 		std::string cfg_pinned_place = config.get_value("pinned", key);
-
-		Gtk::Box *box = Gtk::make_managed<Gtk::Box>();
-		Gtk::Label *label = Gtk::make_managed<Gtk::Label>(key);
-		Gtk::Image *image = Gtk::make_managed<Gtk::Image>();
-
-		box->get_style_context()->add_class("place");
-		box->append(*image);
-		box->append(*label);
-		flowbox_places.append(*box);
-
-		label->set_justify(Gtk::Justification::LEFT);
-		image->set_pixel_size(16);
-		image->set_from_icon_name("folder-symbolic");
-		image->set_margin_end(5);
+		place *place_entry = Gtk::make_managed<place>(key, cfg_pinned_place);
+		flowbox_places.append(*place_entry);
 	}
+	
+	flowbox_places.signal_child_activated().connect(sigc::mem_fun(*this, &frog::on_places_child_activated));
 }
 
 void frog::context_menu_setup() {
@@ -182,7 +171,7 @@ int frog::sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2) {
 	return item1->label.get_text().compare(item2->label.get_text());
 }
 
-void frog::on_child_activated(Gtk::FlowBoxChild* child) {
+void frog::on_filebox_child_activated(Gtk::FlowBoxChild* child) {
 	file_entry *entry = dynamic_cast<file_entry*>(child->get_child());
 	std::string path = entry_path.get_buffer()->get_text().raw();
 
@@ -195,6 +184,12 @@ void frog::on_child_activated(Gtk::FlowBoxChild* child) {
 		std::string cmd = "xdg-open \"" + path + '/' + entry->label.get_text() + '"';
 		system(cmd.c_str());
 	}
+}
+
+void frog::on_places_child_activated(Gtk::FlowBoxChild *child) {
+	place *place_entry = dynamic_cast<place*>(child->get_child());
+	next_paths.clear();
+	populate_files(place_entry->file_path);
 }
 
 void frog::on_right_clicked(const int &n_press,
@@ -245,6 +240,9 @@ void frog::populate_files(const std::string &path) {
 		async_task.wait();
 	}
 
+	// TODO: Move async handling to the file itself
+	// Making things async fixes crashes however it instead breaks the UI a little.
+	// I'm unsure if there's a fix for that.
 	stop_flag.store(false);
 	async_task = std::async(std::launch::async, [this, path]() {
 		for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(path)) {
