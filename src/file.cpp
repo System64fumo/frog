@@ -14,14 +14,11 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	append(image);
 	image.set_pixel_size(64);
 
-	if (name.size() >= 30)
-		name = name.substr(0, 27) + "...";
-
 	append(label);
 	label.set_text(name);
-	label.set_max_width_chars(10);
-	label.set_wrap(true);
-	label.set_wrap_mode(Pango::WrapMode::WORD_CHAR);
+	label.set_justify(Gtk::Justification::CENTER);
+	label.set_ellipsize(Pango::EllipsizeMode::END);
+	label.set_max_width_chars(0);
 
 	if (is_directory)
 		image.set_from_icon_name("default-folder");
