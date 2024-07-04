@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <magic.h>
+#include <thread>
 
 file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	std::string name = entry.path().filename().string();
@@ -9,7 +10,6 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 
 	set_orientation(Gtk::Orientation::VERTICAL);
 	is_directory=entry.is_directory();
-	set_size_request(96,96);
 
 	append(image);
 	image.set_pixel_size(64);
@@ -26,19 +26,27 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	if (is_directory)
 		image.set_from_icon_name("default-folder");
 	else {
-		// TODO: Maybe run this in another thread too?
-		// TODO: Improve mime type handling
-		magic_t magic = magic_open(MAGIC_MIME_TYPE);
-		magic_load(magic, nullptr);
-		const char* mime_type = magic_file(magic, entry.path().c_str());
-		std::string result(mime_type);
-		magic_close(magic);
-		std::replace(result.begin(), result.end(), '/', '-');
-		// This does not always correspond to a right mimetype
-		// Maybe use a manual pre defined list instead?
 
-		image.set_from_icon_name(result);
+		// Set placeholder image
+		image.set_from_icon_name("content-loading-symbolic");
+
+		// Figure out the correct icon
+		std::thread file_thread([&, entry]() {
+			// TODO: Improve mime type handling
+			magic_t magic = magic_open(MAGIC_MIME_TYPE);
+			magic_load(magic, nullptr);
+			const char* mime_type = magic_file(magic, entry.path().c_str());
+			std::string result(mime_type);
+			magic_close(magic);
+			std::replace(result.begin(), result.end(), '/', '-');
+
+			// TODO: Handle previews
+			// This does not always correspond to a right mimetype
+			// Maybe use a manual pre defined list instead?
+			image.set_from_icon_name(result);
+		});
+
+		// TODO: Detach this thread and use a callback for even faster processing
+		file_thread.join();
 	}
-	// TODO: Handle previews
-	// TODO: Handle mounts
 }

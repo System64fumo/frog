@@ -240,9 +240,6 @@ void frog::populate_files(const std::string &path) {
 		async_task.wait();
 	}
 
-	// TODO: Move async handling to the file itself
-	// Making things async fixes crashes however it instead breaks the UI a little.
-	// I'm unsure if there's a fix for that.
 	stop_flag.store(false);
 	async_task = std::async(std::launch::async, [this, path]() {
 		for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(path)) {
@@ -250,6 +247,7 @@ void frog::populate_files(const std::string &path) {
 				break;
 
 			Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
+			fbox_child->set_size_request(96,96);
 			file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
 			fbox_child->set_child(*f_entry);
 			flowbox_files.append(*fbox_child);
