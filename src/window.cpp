@@ -43,8 +43,8 @@ frog::frog() {
 	flowbox_files.set_valign(Gtk::Align::START);
 	flowbox_files.set_homogeneous(true);
 	flowbox_files.set_max_children_per_line(128);
-	flowbox_files.set_row_spacing(5);
-	flowbox_files.set_column_spacing(5);
+	flowbox_files.set_row_spacing(30);
+	flowbox_files.set_column_spacing(30);
 
 	context_menu_setup();
 
@@ -131,25 +131,48 @@ void frog::sidebar_setup() {
 
 void frog::context_menu_setup() {
 	// TODO: Separate this into file and folder menus.
-	auto menu = Gio::Menu::create();
-	menu->append("Test 1", "popup.test1");
-	menu->append("Test 2", "popup.test2");
-	menu->append("Test 3", "popup.test3");
+	file_menu = Gio::Menu::create();
+	auto section1 = Gio::Menu::create();
+	auto section2 = Gio::Menu::create();
+	auto section3 = Gio::Menu::create();
+
+	file_menu->append_section(section1);
+	file_menu->append_section(section2);
+	file_menu->append_section(section3);
 
 	auto action_group = Gio::SimpleActionGroup::create();
-	action_group->add_action("test1", [](){
-		std::cout << "Clicked: test1" << std::endl;
-	});
-	action_group->add_action("test2", [](){
-		std::cout << "Clicked: test2" << std::endl;
-	});
-	action_group->add_action("test3", [](){
-		std::cout << "Clicked: test3" << std::endl;
-	});
-	insert_action_group("popup", action_group);
+	insert_action_group("file", action_group);
 
-	// TODO: Switch menus depending on the type of thing being right clicked.
-	popovermenu_context_menu.set_menu_model(menu);
+	section1->append("Open With", "file.open");
+	action_group->add_action("open", [](){
+		std::cout << "Clicked: open" << std::endl;
+	});
+	section1->append("Rename", "file.rename");
+	action_group->add_action("rename", [](){
+		std::cout << "Clicked: rename" << std::endl;
+	});
+	section1->append("Delete", "file.delete");
+	action_group->add_action("delete", [](){
+		std::cout << "Clicked: delete" << std::endl;
+	});
+
+	section2->append("Cut", "file.cut");
+	action_group->add_action("cut", [](){
+		std::cout << "Clicked: cut" << std::endl;
+	});
+	section2->append("Copy", "file.copy");
+	action_group->add_action("copy", [](){
+		std::cout << "Clicked: copy" << std::endl;
+	});
+	section2->append("Paste", "file.paste");
+	action_group->add_action("paste", [](){
+		std::cout << "Clicked: paste" << std::endl;
+	});
+
+	section3->append("Properties", "file.properties");
+	action_group->add_action("properties", [](){
+		std::cout << "Clicked: properties" << std::endl;
+	});
 }
 
 void frog::on_entry_done() {
@@ -196,6 +219,15 @@ void frog::on_right_clicked(const int &n_press,
 							const double &x,
 							const double &y,
 							Gtk::FlowBoxChild *flowbox_child) {
+
+	file_entry *entry = dynamic_cast<file_entry*>(flowbox_child->get_child());
+
+	// For now only file right click menus are supported
+	if (entry->is_directory)
+		return;
+	else
+		popovermenu_context_menu.set_menu_model(file_menu);
+
 	// This looks horrible, I know..
 	flowbox_files.select_child(*flowbox_child);
 	popovermenu_context_menu.unparent();
