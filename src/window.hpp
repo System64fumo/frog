@@ -32,6 +32,7 @@ class frog : public Gtk::Window {
 		Gtk::ScrolledWindow scrolled_window_files;
 		Gtk::FlowBox flowbox_files;
 
+		Glib::RefPtr<Gio::Menu> file_menu;
 		Gtk::PopoverMenu popovermenu_context_menu;
 
 		void on_entry_done();
