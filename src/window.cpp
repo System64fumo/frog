@@ -37,6 +37,7 @@ frog::frog() {
 	});
 	scrolled_window_files.add_controller(click_gesture);
 
+	dispatcher_files.connect(sigc::mem_fun(*this, &frog::on_dispatcher_files));
 	flowbox_files.signal_child_activated().connect(sigc::mem_fun(*this, &frog::on_filebox_child_activated));
 	flowbox_files.set_sort_func(sigc::mem_fun(*this, &frog::sort_func));
 	flowbox_files.set_activate_on_single_click(false);
@@ -282,12 +283,23 @@ void frog::populate_files(const std::string &path) {
 			fbox_child->set_size_request(96,96);
 			file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
 			fbox_child->set_child(*f_entry);
-			flowbox_files.append(*fbox_child);
 
 			Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
 			click_gesture->set_button(GDK_BUTTON_SECONDARY);
 			click_gesture->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &frog::on_right_clicked), fbox_child));
 			f_entry->add_controller(click_gesture);
+			std::lock_guard<std::mutex> lock(queue_mutex);
+			widget_queue.push(fbox_child);
+
+			dispatcher_files.emit();
 		}
 	});
+}
+
+void frog::on_dispatcher_files() {
+	while (!widget_queue.empty()) {
+		auto widget = widget_queue.front();
+		widget_queue.pop();
+		flowbox_files.append(*widget);
+	}
 }
