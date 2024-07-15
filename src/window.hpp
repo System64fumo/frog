@@ -2,6 +2,8 @@
 #include <gtkmm.h>
 #include <atomic>
 #include <future>
+#include <mutex>
+#include <queue>
 
 class frog : public Gtk::Window {
 	public:
@@ -14,6 +16,8 @@ class frog : public Gtk::Window {
 
 		std::atomic<bool> stop_flag;
 		std::future<void> async_task;
+		std::queue<Gtk::FlowBoxChild*> widget_queue;
+		std::mutex queue_mutex;
 
 		Gtk::Box box_main;
 		Gtk::Box box_sidebar;
@@ -31,12 +35,15 @@ class frog : public Gtk::Window {
 		Gtk::Entry entry_path;
 		Gtk::ScrolledWindow scrolled_window_files;
 		Gtk::FlowBox flowbox_files;
+		Glib::Dispatcher dispatcher_files;
+		std::vector<Gtk::FlowBoxChild*> file_widgets;
 
 		Glib::RefPtr<Gio::Menu> file_menu;
 		Gtk::PopoverMenu popovermenu_context_menu;
 
 		void on_entry_done();
 		int sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2);
+		void on_dispatcher_files();
 		void on_filebox_child_activated(Gtk::FlowBoxChild* child);
 		void on_places_child_activated(Gtk::FlowBoxChild* child);
 		void on_right_clicked(const int &n_press, const double &x, const double &y, Gtk::FlowBoxChild *flowbox_child);
