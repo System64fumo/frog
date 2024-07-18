@@ -5,11 +5,15 @@
 #include <mutex>
 #include <queue>
 
+#include "dir_watcher.hpp"
+
 class frog : public Gtk::Window {
 	public:
 		frog();
 
 	private:
+		// TODO: This is starting to get rather long here.
+		// Consider moving some parts of this to separate files.
 		std::string current_path;
 		std::vector<std::string> back_paths;
 		std::vector<std::string> next_paths;
@@ -18,6 +22,8 @@ class frog : public Gtk::Window {
 		std::future<void> async_task;
 		std::queue<Gtk::FlowBoxChild*> widget_queue;
 		std::mutex queue_mutex;
+
+		directory_watcher *watcher = nullptr;
 
 		Gtk::Box box_main;
 		Gtk::Box box_sidebar;

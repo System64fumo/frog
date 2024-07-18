@@ -294,6 +294,12 @@ void frog::populate_files(const std::string &path) {
 			dispatcher_files.emit();
 		}
 	});
+
+	if (watcher != nullptr)
+		delete watcher;
+
+	watcher = new directory_watcher();
+	watcher->start_watching(path);
 }
 
 void frog::on_dispatcher_files() {
