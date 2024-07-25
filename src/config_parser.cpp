@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 config_parser::config_parser(const std::string &filename) {
 	std::ifstream file(filename);
@@ -68,6 +69,7 @@ std::vector<std::string> config_parser::get_keys(const std::string &section) {
 		for (const auto &pair : section_iter->second) {
 			keys.push_back(pair.first);
 		}
+		std::reverse(keys.begin(), keys.end());
 	}
 	else {
 		std::cerr << "Section '" << section << "' not found" << std::endl;
