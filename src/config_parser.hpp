@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 // INI parser
 class config_parser {
@@ -11,6 +11,6 @@ class config_parser {
 		std::vector<std::string> get_keys(const std::string &section);
 
 	private:
-		std::map<std::string, std::map<std::string, std::string>> data;
+		std::unordered_map<std::string, std::unordered_map<std::string, std::string>> data;
 		std::string trim(const std::string &str);
 };
