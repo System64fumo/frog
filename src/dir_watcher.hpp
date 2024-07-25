@@ -3,13 +3,19 @@
 #include <thread>
 #include <atomic>
 #include <condition_variable>
+#include <glibmm/dispatcher.h>
+#include <queue>
 
 class directory_watcher {
 	public:
-		directory_watcher();
+		directory_watcher(Glib::Dispatcher *dispatcher);
 		~directory_watcher();
 
 		void start_watching(const std::string &directory);
+
+		std::queue<std::string> event_type;
+		std::queue<std::string> event_name;
+		std::mutex queue_mutex;
 
 	private:
 		void watch_directory(const std::string &directory, std::stop_token stop_token);
@@ -21,4 +27,6 @@ class directory_watcher {
 		std::mutex mtx;
 		int inotify_fd;
 		int event_fd;
+
+		Glib::Dispatcher *dispatcher = nullptr;
 };
