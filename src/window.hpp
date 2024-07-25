@@ -42,6 +42,7 @@ class frog : public Gtk::Window {
 		Gtk::ScrolledWindow scrolled_window_files;
 		Gtk::FlowBox flowbox_files;
 		Glib::Dispatcher dispatcher_files;
+		Glib::Dispatcher dispatcher_file_change;
 		std::vector<Gtk::FlowBoxChild*> file_widgets;
 
 		Glib::RefPtr<Gio::Menu> file_menu;
@@ -50,6 +51,7 @@ class frog : public Gtk::Window {
 		void on_entry_done();
 		int sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2);
 		void on_dispatcher_files();
+		void on_dispatcher_file_change();
 		void on_filebox_child_activated(Gtk::FlowBoxChild* child);
 		void on_places_child_activated(Gtk::FlowBoxChild* child);
 		void on_right_clicked(const int &n_press, const double &x, const double &y, Gtk::FlowBoxChild *flowbox_child);

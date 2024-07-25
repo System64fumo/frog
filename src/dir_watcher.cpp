@@ -6,7 +6,9 @@
 #include <iostream>
 #include <cstring>
 
-directory_watcher::directory_watcher() : stop_thread(false), inotify_fd(-1), event_fd(-1) {}
+directory_watcher::directory_watcher(Glib::Dispatcher *dispatcher) :  stop_thread(false), inotify_fd(-1), event_fd(-1) {
+	this->dispatcher = dispatcher;
+}
 
 directory_watcher::~directory_watcher() {
 	stop_watching();
@@ -100,17 +102,20 @@ void directory_watcher::watch_directory(const std::string &directory, std::stop_
 
 				// TODO: Do something with this
 				if (event->len) {
+					std::lock_guard<std::mutex> lock(queue_mutex);
+					event_name.push(event->name);
 					if (event->mask & IN_CREATE) {
-						std::cout << "File created: " << event->name << std::endl;
+						event_type.push("created");
 					} else if (event->mask & IN_DELETE) {
-						std::cout << "File deleted: " << event->name << std::endl;
+						event_type.push("deleted");
 					} else if (event->mask & IN_MODIFY) {
-						std::cout << "File modified: " << event->name << std::endl;
+						event_type.push("modified");
 					} else if (event->mask & IN_MOVED_FROM) {
-						std::cout << "File moved from: " << event->name << std::endl;
+						event_type.push("moved_from");
 					} else if (event->mask & IN_MOVED_TO) {
-						std::cout << "File moved to: " << event->name << std::endl;
+						event_type.push("moved_to");
 					}
+					dispatcher->emit();
 				}
 				i += event_size + event->len;
 			}

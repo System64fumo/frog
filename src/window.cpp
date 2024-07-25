@@ -38,6 +38,8 @@ frog::frog() {
 	scrolled_window_files.add_controller(click_gesture);
 
 	dispatcher_files.connect(sigc::mem_fun(*this, &frog::on_dispatcher_files));
+	dispatcher_file_change.connect(sigc::mem_fun(*this, &frog::on_dispatcher_file_change));
+
 	flowbox_files.signal_child_activated().connect(sigc::mem_fun(*this, &frog::on_filebox_child_activated));
 	flowbox_files.set_sort_func(sigc::mem_fun(*this, &frog::sort_func));
 	flowbox_files.set_activate_on_single_click(false);
@@ -298,7 +300,7 @@ void frog::populate_files(const std::string &path) {
 	if (watcher != nullptr)
 		delete watcher;
 
-	watcher = new directory_watcher();
+	watcher = new directory_watcher(&dispatcher_file_change);
 	watcher->start_watching(path);
 }
 
@@ -308,4 +310,36 @@ void frog::on_dispatcher_files() {
 		widget_queue.pop();
 		flowbox_files.append(*widget);
 	}
+}
+
+void frog::on_dispatcher_file_change() {
+	std::lock_guard<std::mutex> lock(watcher->queue_mutex);
+	std::string event_type, event_name;
+
+	event_type = watcher->event_type.front();
+	watcher->event_type.pop();
+
+	event_name = watcher->event_name.front();
+	watcher->event_name.pop();
+
+	std::cout << event_name << " " << event_type << std::endl;
+
+	// TODO: Actually handle the events
+	if (event_type == "created") {
+	}
+	else if (event_type == "deleted") {
+	}
+	else if (event_type == "modified") {
+	}
+	else if (event_type == "moved_from") {
+	}
+	else if (event_type == "moved_to") {
+	}
+	else
+		return;
+
+	// Temporary solution
+	std::string temp_path = current_path;
+	current_path = "";
+	populate_files(temp_path);
 }
