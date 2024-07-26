@@ -4,6 +4,7 @@
 #include "file.hpp"
 #include "css.hpp"
 #include "config_parser.hpp"
+#include "icons.hpp"
 
 #include <iostream>
 #include <filesystem>
@@ -16,6 +17,7 @@ frog::frog() {
 
 	navbar_setup();
 	sidebar_setup();
+	load_icon_map();
 
 	box_main.append(box_container);
 	box_container.get_style_context()->add_class("file_container");
