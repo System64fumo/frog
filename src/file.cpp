@@ -1,7 +1,7 @@
 #include "file.hpp"
+#include "icons.hpp"
 
 #include <iostream>
-#include <magic.h>
 
 file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	file_name = entry.path().filename().string();
@@ -26,16 +26,17 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 		return;
 	}
 
-	// TODO: Improve mime type handling
-	magic_t magic = magic_open(MAGIC_MIME_TYPE);
-	magic_load(magic, nullptr);
-	const char* mime_type = magic_file(magic, entry.path().c_str());
-	file_icon = std::string(mime_type);
-	magic_close(magic);
-	std::replace(file_icon.begin(), file_icon.end(), '/', '-');
-
-	// TODO: Handle previews
-	// This does not always correspond to a right mimetype
-	// Maybe use a manual pre defined list instead?
-	image.set_from_icon_name(file_icon);
+	size_t last_dot_pos = file_name.rfind('.');
+	if (last_dot_pos != std::string::npos) {
+		std::string extension = file_name.substr(last_dot_pos + 1);
+		std::string extension_icon = icon_from_extension[extension];
+		if (!extension_icon.empty())
+			image.set_from_icon_name(icon_from_extension[extension]);
+		else
+			image.set_from_icon_name("application-blank");
+	}
+	else {
+		// TODO: Re add magic file detection for fallback
+		image.set_from_icon_name("application-blank");
+	}
 }
