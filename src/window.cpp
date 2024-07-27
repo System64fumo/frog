@@ -270,12 +270,16 @@ void frog::populate_files(const std::string &path) {
 	button_next.set_sensitive(next_paths.size() != 0);
 
 	entry_path.set_text(path);
-	flowbox_files.remove_all();
 
 	if (async_task.valid()) {
 		stop_flag.store(true);
 		async_task.wait();
 	}
+
+	// Cleanup
+	std::queue<Gtk::FlowBoxChild*> empty;
+	std::swap(widget_queue, empty);
+	flowbox_files.remove_all();
 
 	stop_flag.store(false);
 	async_task = std::async(std::launch::async, [this, path]() {
