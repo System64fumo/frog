@@ -1,5 +1,15 @@
 #pragma once
-#include <gtkmm.h>
+#include <gtkmm/window.h>
+#include <gtkmm/box.h>
+#include <gtkmm/button.h>
+#include <gtkmm/scrolledwindow.h>
+#include <gtkmm/flowbox.h>
+#include <glibmm/dispatcher.h>
+#include <gtkmm/popovermenu.h>
+#include <gtkmm/entry.h>
+#include <gtkmm/gestureclick.h>
+#include <giomm/menu.h>
+#include <giomm/simpleactiongroup.h>
 #include <atomic>
 #include <future>
 #include <mutex>

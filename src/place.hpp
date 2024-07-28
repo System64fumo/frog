@@ -1,5 +1,7 @@
 #pragma once
-#include <gtkmm.h>
+#include <gtkmm/box.h>
+#include <gtkmm/image.h>
+#include <gtkmm/label.h>
 
 class place : public Gtk::Box {
 	public:
