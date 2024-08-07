@@ -4,6 +4,7 @@
 #include <iostream>
 
 file_entry::file_entry(const std::filesystem::directory_entry &entry) {
+	path = entry.path();
 	file_name = entry.path().filename().string();
 	set_orientation(Gtk::Orientation::VERTICAL);
 
