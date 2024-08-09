@@ -206,13 +206,12 @@ void frog::context_menu_setup() {
 
 			// TODO: Figure out the size automatically
 			gsize count = 1024;
-			char buffer[count] = {};
 
-			// TODO: This works after the second try only
-			// TODO: Fix weird symbols?
-			data->read_async(buffer, count, [&, data](Glib::RefPtr<Gio::AsyncResult>& result){
-				data->read_finish(result);
-				std::cout << buffer << std::endl;
+			data->read_bytes_async(count, [&, data](Glib::RefPtr<Gio::AsyncResult>& result){
+				auto bytes = data->read_bytes_finish(result);
+				gsize bytes_size = bytes->get_size();
+				auto byte_data = bytes->get_data(bytes_size);
+				std::cout << std::string(reinterpret_cast<const char*>(byte_data), bytes_size) << std::endl;
 			});
 		});
 	});
