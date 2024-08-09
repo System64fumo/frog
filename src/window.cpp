@@ -166,6 +166,18 @@ void frog::context_menu_setup() {
 	section2->append("Cut", "file.cut");
 	action_group->add_action("cut", [](){
 		std::cout << "Clicked: cut" << std::endl;
+		Glib::RefPtr<Gdk::Clipboard> clipboard = get_clipboard();
+
+		std::string content = "cut";
+		for (const auto &child : flowbox_files.get_selected_children()) {
+			auto file = dynamic_cast<file_entry*>(child->get_child());
+			content += "\nfile://" + file->path;
+		}
+
+		Glib::ustring mime_type = "x-special/gnome-copied-files";
+		auto bytes = Glib::Bytes::create(content.data(), content.size());
+		auto contentprovider = Gdk::ContentProvider::create(mime_type, bytes);
+		clipboard->set_content(contentprovider);
 	});
 	section2->append("Copy", "file.copy");
 	action_group->add_action("copy", [&](){
