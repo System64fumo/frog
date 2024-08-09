@@ -164,7 +164,7 @@ void frog::context_menu_setup() {
 	});
 
 	section2->append("Cut", "file.cut");
-	action_group->add_action("cut", [](){
+	action_group->add_action("cut", [&](){
 		std::cout << "Clicked: cut" << std::endl;
 		Glib::RefPtr<Gdk::Clipboard> clipboard = get_clipboard();
 
@@ -196,8 +196,25 @@ void frog::context_menu_setup() {
 		clipboard->set_content(contentprovider);
 	});
 	section2->append("Paste", "file.paste");
-	action_group->add_action("paste", [](){
+	action_group->add_action("paste", [&](){
 		std::cout << "Clicked: paste" << std::endl;
+		Glib::RefPtr<Gdk::Clipboard> clipboard = get_clipboard();
+		std::vector<Glib::ustring> mime_types = {"x-special/gnome-copied-files"};
+		clipboard->read_async(mime_types, Glib::PRIORITY_DEFAULT, [&, clipboard](Glib::RefPtr<Gio::AsyncResult>& result){
+			Glib::ustring mime;
+			Glib::RefPtr<Gio::InputStream> data = clipboard->read_finish(result, mime);
+
+			// TODO: Figure out the size automatically
+			gsize count = 1024;
+			char buffer[count] = {};
+
+			// TODO: This works after the second try only
+			// TODO: Fix weird symbols?
+			data->read_async(buffer, count, [&, data](Glib::RefPtr<Gio::AsyncResult>& result){
+				data->read_finish(result);
+				std::cout << buffer << std::endl;
+			});
+		});
 	});
 
 	section3->append("Properties", "file.properties");
