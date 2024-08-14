@@ -16,6 +16,7 @@ class directory_watcher {
 		std::queue<std::string> event_type;
 		std::queue<std::string> event_name;
 		std::mutex queue_mutex;
+		std::string path;
 
 	private:
 		void watch_directory(const std::string &directory, std::stop_token stop_token);

@@ -280,10 +280,8 @@ void frog::on_right_clicked(const int &n_press,
 							const double &y,
 							Gtk::FlowBoxChild *flowbox_child) {
 
-	file_entry *entry = dynamic_cast<file_entry*>(flowbox_child->get_child());
-
-	// This looks horrible, I know..
 	flowbox_files.select_child(*flowbox_child);
+
 	Gdk::Rectangle rect(flowbox_child->get_width() / 2, flowbox_child->get_height() / 2, 0, 0);
 	popovermenu_context_menu.unparent();
 	popovermenu_context_menu.set_parent(*flowbox_child);
@@ -354,8 +352,12 @@ void frog::populate_files(const std::string &path) {
 		}
 	});
 
-	if (watcher != nullptr)
-		delete watcher;
+	if (watcher != nullptr) {
+		if (watcher->path == path)
+			return;
+		else
+			delete watcher;
+	}
 
 	watcher = new directory_watcher(&dispatcher_file_change);
 	watcher->start_watching(path);
