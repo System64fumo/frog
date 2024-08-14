@@ -35,11 +35,21 @@ frog::frog() {
 	scrolled_window_files.set_vexpand(true);
 
 	Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
+	Glib::RefPtr<Gtk::GestureClick> right_click_gesture = Gtk::GestureClick::create();
 	click_gesture->set_button(GDK_BUTTON_PRIMARY);
+	right_click_gesture->set_button(GDK_BUTTON_SECONDARY);
 	click_gesture->signal_pressed().connect([&](const int &n_press, const double &x, const double &y) {
 		flowbox_files.unselect_all();
 	});
+	right_click_gesture->signal_pressed().connect([&](const int &n_press, const double &x, const double &y) {
+		Gdk::Rectangle rect(x, y, 0, 0);
+		popovermenu_context_menu.unparent();
+		popovermenu_context_menu.set_parent(scrolled_window_files);
+		popovermenu_context_menu.set_pointing_to(rect);
+		popovermenu_context_menu.popup();
+	});
 	scrolled_window_files.add_controller(click_gesture);
+	scrolled_window_files.add_controller(right_click_gesture);
 
 	dispatcher_files.connect(sigc::mem_fun(*this, &frog::on_dispatcher_files));
 	dispatcher_file_change.connect(sigc::mem_fun(*this, &frog::on_dispatcher_file_change));
@@ -220,6 +230,9 @@ void frog::context_menu_setup() {
 	action_group->add_action("properties", [](){
 		std::cout << "Clicked: properties" << std::endl;
 	});
+
+
+	popovermenu_context_menu.set_menu_model(file_menu);
 }
 
 void frog::on_entry_done() {
@@ -269,16 +282,12 @@ void frog::on_right_clicked(const int &n_press,
 
 	file_entry *entry = dynamic_cast<file_entry*>(flowbox_child->get_child());
 
-	// For now only file right click menus are supported
-	if (entry->is_directory)
-		return;
-	else
-		popovermenu_context_menu.set_menu_model(file_menu);
-
 	// This looks horrible, I know..
 	flowbox_files.select_child(*flowbox_child);
+	Gdk::Rectangle rect(flowbox_child->get_width() / 2, flowbox_child->get_height() / 2, 0, 0);
 	popovermenu_context_menu.unparent();
 	popovermenu_context_menu.set_parent(*flowbox_child);
+	popovermenu_context_menu.set_pointing_to(rect);
 	popovermenu_context_menu.popup();
 }
 
