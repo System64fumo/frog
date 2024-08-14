@@ -16,6 +16,7 @@ directory_watcher::~directory_watcher() {
 
 void directory_watcher::start_watching(const std::string &directory) {
 	stop_watching();
+	path = directory;
 
 	stop_thread = false;
 	event_fd = eventfd(0, EFD_NONBLOCK);
