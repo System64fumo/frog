@@ -328,6 +328,7 @@ void frog::populate_files(const std::string &path) {
 	// Cleanup
 	std::queue<Gtk::FlowBoxChild*> empty;
 	std::swap(widget_queue, empty);
+	popovermenu_context_menu.unparent();
 	flowbox_files.remove_all();
 
 	stop_flag.store(false);
