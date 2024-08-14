@@ -169,8 +169,14 @@ void frog::context_menu_setup() {
 		std::cout << "Clicked: rename" << std::endl;
 	});
 	section1->append("Delete", "file.delete");
-	action_group->add_action("delete", [](){
-		std::cout << "Clicked: delete" << std::endl;
+	action_group->add_action("delete", [&](){
+		std::cout << "Clicked: delete"  << std::endl;
+		auto children = flowbox_files.get_selected_children();
+		for (const auto& child : children) {
+			auto file = dynamic_cast<file_entry*>(child->get_child());
+			std::cout << file->path << std::endl;
+			std::filesystem::remove(file->path);
+		}
 	});
 
 	section2->append("Cut", "file.cut");
