@@ -38,7 +38,7 @@ frog::frog() {
 	Glib::RefPtr<Gtk::GestureClick> right_click_gesture = Gtk::GestureClick::create();
 	click_gesture->set_button(GDK_BUTTON_PRIMARY);
 	right_click_gesture->set_button(GDK_BUTTON_SECONDARY);
-	click_gesture->signal_pressed().connect([&](const int &n_press, const double &x, const double &y) {
+	click_gesture->signal_released().connect([&](const int &n_press, const double &x, const double &y) {
 		flowbox_files.unselect_all();
 	});
 	right_click_gesture->signal_pressed().connect([&](const int &n_press, const double &x, const double &y) {
@@ -62,6 +62,7 @@ frog::frog() {
 	flowbox_files.set_max_children_per_line(128);
 	flowbox_files.set_row_spacing(30);
 	flowbox_files.set_column_spacing(30);
+	flowbox_files.set_selection_mode(Gtk::SelectionMode::MULTIPLE);
 
 	context_menu_setup();
 
