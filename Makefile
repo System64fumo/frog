@@ -4,17 +4,27 @@ SRCS +=	$(wildcard src/*.cpp)
 OBJS = $(SRCS:.cpp=.o)
 DESTDIR = $(HOME)/.local
 
-CXXFLAGS = -march=native -mtune=native -Os -s -Wall -flto=auto -fno-exceptions -std=c++20
+CXXFLAGS += -Oz -s -Wall -flto -fno-exceptions -std=c++20
 CXXFLAGS += $(shell pkg-config --cflags $(PKGS))
 LDFLAGS += $(shell pkg-config --libs $(PKGS)) -Wl,--gc-sections
 
+JOB_COUNT := $(EXEC) $(OBJS)
+JOBS_DONE := $(shell ls -l $(JOB_COUNT) 2> /dev/null | wc -l)
+
+define progress
+	$(eval JOBS_DONE := $(shell echo $$(($(JOBS_DONE) + 1))))
+	@printf "[$(JOBS_DONE)/$(shell echo $(JOB_COUNT) | wc -w)] %s %s\n" $(1) $(2)
+endef
+
 $(EXEC): $(OBJS)
-	$(CXX) -o $(EXEC) $(OBJS) \
+	$(call progress, Linking $@)
+	@$(CXX) -o $(EXEC) $(OBJS) \
 	$(LDFLAGS) \
 	$(CXXFLAGS)
 
 %.o: %.cpp
-	$(CXX) $(CFLAGS) -c $< -o $@ \
+	$(call progress, Compiling $@)
+	@$(CXX) $(CFLAGS) -c $< -o $@ \
 	$(CXXFLAGS)
 
 install: $(EXEC)
@@ -22,4 +32,5 @@ install: $(EXEC)
 	install $(EXEC) $(DESTDIR)/bin/$(EXEC)
 
 clean:
-	rm $(EXEC) $(SRCS:.cpp=.o)
+	@echo "Cleaning up"
+	@rm $(EXEC) $(SRCS:.cpp=.o)
