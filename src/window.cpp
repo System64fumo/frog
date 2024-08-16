@@ -6,6 +6,8 @@
 #include "config_parser.hpp"
 #include "icons.hpp"
 
+#include <gtkmm/dragsource.h>
+#include <gtkmm/droptarget.h>
 #include <gdkmm/clipboard.h>
 #include <glibmm/bytes.h>
 #include <iostream>
@@ -63,7 +65,18 @@ frog::frog() {
 	flowbox_files.set_max_children_per_line(128);
 	flowbox_files.set_row_spacing(30);
 	flowbox_files.set_column_spacing(30);
-	flowbox_files.set_selection_mode(Gtk::SelectionMode::MULTIPLE);
+
+	// Multiple selection is disabled due to warn spam in stdout
+	// Also because it breaks drag and drop
+	//flowbox_files.set_selection_mode(Gtk::SelectionMode::MULTIPLE);
+	const GType ustring_type = Glib::Value<Glib::ustring>::value_type();
+	auto target = Gtk::DropTarget::create(ustring_type, Gdk::DragAction::COPY);
+	target->signal_drop().connect([](const Glib::ValueBase& value, double, double) {
+		// Can't add code here yet since drag and drop is broken in Hyprland at the moment..
+		return true;
+	}, false);
+	flowbox_files.add_controller(target);
+
 
 	//std::filesystem::current_path().string() // TODO: Add option to use this
 	entry_path.set_text(getenv("HOME"));
@@ -245,6 +258,18 @@ void frog::populate_files(const std::string &path) {
 			f_entry->add_controller(click_gesture);
 			std::lock_guard<std::mutex> lock(queue_mutex);
 			widget_queue.push(fbox_child);
+
+			auto source = Gtk::DragSource::create();
+			source->set_actions(Gdk::DragAction::COPY);
+			source->signal_prepare().connect([f_entry](const double &x, const double &y){
+				// This is probably not the right way to do this?
+				// It copies strings which is fine but we need to copy files
+				Glib::Value<Glib::ustring> ustring_value;
+				ustring_value.init(ustring_value.value_type());
+				ustring_value.set(f_entry->path);
+				return Gdk::ContentProvider::create(ustring_value);
+			}, false);
+			f_entry->add_controller(source);
 
 			dispatcher_files.emit();
 		}
