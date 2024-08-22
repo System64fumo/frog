@@ -2,7 +2,7 @@
 #include <gtkmm/box.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/image.h>
-#include <gtkmm/label.h>
+#include <gtkmm/editablelabel.h>
 #include <filesystem>
 
 class file_entry : public Gtk::Box {
@@ -12,7 +12,7 @@ class file_entry : public Gtk::Box {
 		std::string path;
 		bool is_directory;
 		Gtk::Image image;
-		Gtk::Label label;
+		Gtk::EditableLabel label;
 
 	private:
 		std::string file_name;
