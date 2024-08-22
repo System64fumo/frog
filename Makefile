@@ -4,7 +4,7 @@ SRCS +=	$(wildcard src/*.cpp)
 OBJS = $(SRCS:.cpp=.o)
 DESTDIR = $(HOME)/.local
 
-CXXFLAGS += -Oz -s -Wall -flto -fno-exceptions -std=c++20
+CXXFLAGS += -Oz -s -Wall -flto -std=c++20
 CXXFLAGS += $(shell pkg-config --cflags $(PKGS))
 LDFLAGS += $(shell pkg-config --libs $(PKGS)) -Wl,--gc-sections
 
