@@ -88,8 +88,15 @@ void frog::menu_dir_setup() {
 	menu_dir->append_section(section3);
 
 	section1->append("Create New Folder", "dir.newdir");
-	action_group->add_action("newdir", [](){
-		std::cout << "Clicked: newdir" << std::endl;
+	action_group->add_action("newdir", [&](){
+		const std::filesystem::path dir_path{current_path + "/New Folder"};
+		try {
+			std::filesystem::create_directory(dir_path);
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			std::cerr << "Failed to create a new directory" << std::endl;
+			std::cerr << "Error: " << e.what() << std::endl;
+		}
 	});
 
 	section1->append("Create New File", "dir.newfile");
@@ -113,7 +120,8 @@ void frog::menu_dir_setup() {
 				auto bytes = data->read_bytes_finish(result);
 				gsize bytes_size = bytes->get_size();
 				auto byte_data = bytes->get_data(bytes_size);
-				std::cout << std::string(reinterpret_cast<const char*>(byte_data), bytes_size) << std::endl;
+				std::string data = std::string(reinterpret_cast<const char*>(byte_data), bytes_size);
+				std::cout << data << std::endl;
 			});
 		});
 	});
