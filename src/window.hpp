@@ -55,7 +55,8 @@ class frog : public Gtk::Window {
 		Glib::Dispatcher dispatcher_file_change;
 		std::vector<Gtk::FlowBoxChild*> file_widgets;
 
-		Glib::RefPtr<Gio::Menu> file_menu;
+		Glib::RefPtr<Gio::Menu> menu_file;
+		Glib::RefPtr<Gio::Menu> menu_dir;
 		Gtk::PopoverMenu popovermenu_context_menu;
 
 		void on_entry_done();
@@ -67,6 +68,7 @@ class frog : public Gtk::Window {
 		void on_right_clicked(const int &n_press, const double &x, const double &y, Gtk::FlowBoxChild *flowbox_child);
 		void navbar_setup();
 		void sidebar_setup();
-		void context_menu_setup();
+		void menu_file_setup();
+		void menu_dir_setup();
 		void populate_files(const std::string &path);
 };

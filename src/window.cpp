@@ -21,7 +21,8 @@ frog::frog() {
 
 	navbar_setup();
 	sidebar_setup();
-	context_menu_setup();
+	menu_file_setup();
+	menu_dir_setup();
 	load_icon_map();
 
 	box_main.append(box_container);
@@ -49,6 +50,7 @@ frog::frog() {
 		popovermenu_context_menu.unparent();
 		popovermenu_context_menu.set_parent(scrolled_window_files);
 		popovermenu_context_menu.set_pointing_to(rect);
+		popovermenu_context_menu.set_menu_model(menu_dir);
 		popovermenu_context_menu.popup();
 	});
 	scrolled_window_files.add_controller(click_gesture);

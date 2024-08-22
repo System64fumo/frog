@@ -3,16 +3,15 @@
 
 #include <iostream>
 
-void frog::context_menu_setup() {
-	// TODO: Separate this into file and folder menus.
-	file_menu = Gio::Menu::create();
+void frog::menu_file_setup() {
+	menu_file = Gio::Menu::create();
 	auto section1 = Gio::Menu::create();
 	auto section2 = Gio::Menu::create();
 	auto section3 = Gio::Menu::create();
 
-	file_menu->append_section(section1);
-	file_menu->append_section(section2);
-	file_menu->append_section(section3);
+	menu_file->append_section(section1);
+	menu_file->append_section(section2);
+	menu_file->append_section(section3);
 
 	auto action_group = Gio::SimpleActionGroup::create();
 	insert_action_group("file", action_group);
@@ -68,7 +67,37 @@ void frog::context_menu_setup() {
 		auto contentprovider = Gdk::ContentProvider::create(mime_type, bytes);
 		clipboard->set_content(contentprovider);
 	});
-	section2->append("Paste", "file.paste");
+
+	section3->append("Properties", "file.properties");
+	action_group->add_action("properties", [](){
+		std::cout << "Clicked: properties" << std::endl;
+	});
+}
+
+void frog::menu_dir_setup() {
+	menu_dir = Gio::Menu::create();
+	auto section1 = Gio::Menu::create();
+	auto section2 = Gio::Menu::create();
+	auto section3 = Gio::Menu::create();
+
+	auto action_group = Gio::SimpleActionGroup::create();
+	insert_action_group("dir", action_group);
+
+	menu_dir->append_section(section1);
+	menu_dir->append_section(section2);
+	menu_dir->append_section(section3);
+
+	section1->append("Create New Folder", "dir.newdir");
+	action_group->add_action("newdir", [](){
+		std::cout << "Clicked: newdir" << std::endl;
+	});
+
+	section1->append("Create New File", "dir.newfile");
+	action_group->add_action("newfile", [](){
+		std::cout << "Clicked: newfile" << std::endl;
+	});
+
+	section2->append("Paste", "dir.paste");
 	action_group->add_action("paste", [&](){
 		std::cout << "Clicked: paste" << std::endl;
 		Glib::RefPtr<Gdk::Clipboard> clipboard = get_clipboard();
@@ -89,12 +118,10 @@ void frog::context_menu_setup() {
 		});
 	});
 
-	section3->append("Properties", "file.properties");
+	section3->append("Properties", "dir.properties");
 	action_group->add_action("properties", [](){
 		std::cout << "Clicked: properties" << std::endl;
 	});
-
-	popovermenu_context_menu.set_menu_model(file_menu);
 }
 
 void frog::on_right_clicked(const int &n_press,
@@ -108,5 +135,6 @@ void frog::on_right_clicked(const int &n_press,
 	popovermenu_context_menu.unparent();
 	popovermenu_context_menu.set_parent(*flowbox_child);
 	popovermenu_context_menu.set_pointing_to(rect);
+	popovermenu_context_menu.set_menu_model(menu_file);
 	popovermenu_context_menu.popup();
 }
