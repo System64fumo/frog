@@ -2,6 +2,8 @@
 #include "icons.hpp"
 
 #include <iostream>
+#include <gtkmm/stack.h>
+#include <gtkmm/label.h>
 
 file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	path = entry.path();
@@ -14,9 +16,12 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 
 	append(label);
 	label.set_text(file_name);
-	label.set_justify(Gtk::Justification::CENTER);
-	label.set_ellipsize(Pango::EllipsizeMode::END);
-	label.set_max_width_chars(0);
+	label.set_halign(Gtk::Align::CENTER);
+	auto stack = dynamic_cast<Gtk::Stack*>(label.get_children()[0]);
+	auto ulabel = dynamic_cast<Gtk::Label*>(stack->get_children()[0]);
+	ulabel->set_justify(Gtk::Justification::CENTER);
+	ulabel->set_ellipsize(Pango::EllipsizeMode::END);
+	ulabel->set_max_width_chars(0);
 
 	// Figure out the correct icon
 	file_size = entry.is_regular_file() ? entry.file_size() : 0;

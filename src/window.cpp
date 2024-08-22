@@ -43,6 +43,9 @@ frog::frog() {
 	click_gesture->set_button(GDK_BUTTON_PRIMARY);
 	right_click_gesture->set_button(GDK_BUTTON_SECONDARY);
 	click_gesture->signal_released().connect([&](const int &n_press, const double &x, const double &y) {
+		auto selected = flowbox_files.get_selected_children()[0];
+		auto f_entry = dynamic_cast<file_entry*>(selected->get_child());
+		f_entry->label.stop_editing(false);
 		flowbox_files.unselect_all();
 	});
 	right_click_gesture->signal_pressed().connect([&](const int &n_press, const double &x, const double &y) {
@@ -253,6 +256,7 @@ void frog::populate_files(const std::string &path) {
 			fbox_child->set_size_request(96,96);
 			file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
 			fbox_child->set_child(*f_entry);
+			fbox_child->set_focusable(false); // Fixes focus issue when renaming
 
 			Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
 			click_gesture->set_button(GDK_BUTTON_SECONDARY);
