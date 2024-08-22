@@ -2,6 +2,7 @@
 #include "file.hpp"
 
 #include <iostream>
+#include <fstream>
 
 void frog::menu_file_setup() {
 	menu_file = Gio::Menu::create();
@@ -100,8 +101,12 @@ void frog::menu_dir_setup() {
 	});
 
 	section1->append("Create New File", "dir.newfile");
-	action_group->add_action("newfile", [](){
-		std::cout << "Clicked: newfile" << std::endl;
+	action_group->add_action("newfile", [&](){
+		const std::string file_path{current_path + "/New file"};
+		std::ofstream file(file_path);
+		if (!file) {
+			std::cerr << "Failed to create a new file" << std::endl;
+		}
 	});
 
 	section2->append("Paste", "dir.paste");
