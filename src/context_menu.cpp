@@ -22,8 +22,12 @@ void frog::menu_file_setup() {
 		std::cout << "Clicked: open" << std::endl;
 	});
 	section1->append("Rename", "file.rename");
-	action_group->add_action("rename", [](){
+	action_group->add_action("rename", [&](){
 		std::cout << "Clicked: rename" << std::endl;
+		auto selected = flowbox_files.get_selected_children()[0];
+		auto f_entry = dynamic_cast<file_entry*>(selected->get_child());
+		f_entry->label.start_editing();
+		f_entry->label.set_position(f_entry->label.get_text().length());
 	});
 	section1->append("Delete", "file.delete");
 	action_group->add_action("delete", [&](){
