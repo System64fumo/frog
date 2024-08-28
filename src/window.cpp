@@ -327,7 +327,12 @@ void frog::on_dispatcher_file_change() {
 			auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
 			auto f_entry = dynamic_cast<file_entry*>(fbox_child->get_child());
 			if (f_entry->path == event_name) {
-				// TODO: Remove popover
+				// Remove the popover if found
+				std::vector<Gtk::Widget*> f_entry_children = fbox_child->get_children();
+				if (f_entry_children.size() > 1)
+					f_entry_children[1]->unparent();
+
+				// Remove the file entry
 				flowbox_files.remove(*fbox_child);
 				return;
 			}
