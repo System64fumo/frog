@@ -16,6 +16,7 @@
 #include <queue>
 
 #include "dir_watcher.hpp"
+#include "xdg_dirs.hpp"
 
 class frog : public Gtk::Window {
 	public:

@@ -20,6 +20,7 @@ frog::frog() {
 	show();
 
 	navbar_setup();
+	get_xdg_user_dirs();
 	sidebar_setup();
 	menu_file_setup();
 	menu_dir_setup();
