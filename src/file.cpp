@@ -24,6 +24,17 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	ulabel->set_ellipsize(Pango::EllipsizeMode::END);
 	ulabel->set_max_width_chars(0);
 
+	// Handle renaming
+	label.signal_state_flags_changed().connect([&, entry](Gtk::StateFlags state_flags) {
+		if ((int)state_flags == 24704) {
+			if (label.get_text() != file_name.c_str()) {
+				std::string cur_path = entry.path().parent_path();
+				std::string new_name = label.get_text();
+				std::filesystem::rename(path, cur_path + "/" + new_name);
+			}
+		}
+	});
+
 	// Figure out the correct icon
 	file_size = entry.is_regular_file() ? entry.file_size() : 0;
 	is_directory=entry.is_directory();
