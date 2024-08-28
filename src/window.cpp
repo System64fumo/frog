@@ -11,7 +11,6 @@
 #include <gdkmm/clipboard.h>
 #include <glibmm/bytes.h>
 #include <iostream>
-#include <filesystem>
 
 frog::frog() {
 	set_title("Frog");
@@ -257,32 +256,7 @@ void frog::populate_files(const std::string &path) {
 		for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(path)) {
 			if (stop_flag.load())
 				break;
-
-			Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
-			fbox_child->set_size_request(96,96);
-			file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
-			fbox_child->set_child(*f_entry);
-			fbox_child->set_focusable(false); // Fixes focus issue when renaming
-
-			Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
-			click_gesture->set_button(GDK_BUTTON_SECONDARY);
-			click_gesture->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &frog::on_right_clicked), fbox_child));
-			f_entry->add_controller(click_gesture);
-			std::lock_guard<std::mutex> lock(queue_mutex);
-			widget_queue.push(fbox_child);
-
-			auto source = Gtk::DragSource::create();
-			source->set_actions(Gdk::DragAction::COPY);
-			source->signal_prepare().connect([f_entry](const double &x, const double &y){
-				// This is probably not the right way to do this?
-				// It copies strings which is fine but we need to copy files
-				Glib::Value<Glib::ustring> ustring_value;
-				ustring_value.init(ustring_value.value_type());
-				ustring_value.set(f_entry->path);
-				return Gdk::ContentProvider::create(ustring_value);
-			}, false);
-			f_entry->add_controller(source);
-
+			create_file_entry(entry);
 			dispatcher_files.emit();
 		}
 	});
@@ -320,6 +294,10 @@ void frog::on_dispatcher_file_change() {
 
 	// TODO: Actually handle the events
 	if (event_type == "created") {
+		std::filesystem::directory_entry entry(event_name);
+		create_file_entry(entry);
+		dispatcher_files.emit();
+		return;
 	}
 	else if (event_type == "deleted") {
 		auto children = flowbox_files.get_children();
@@ -352,4 +330,31 @@ void frog::on_dispatcher_file_change() {
 	std::string temp_path = current_path;
 	current_path = "";
 	populate_files(temp_path);
+}
+
+void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
+	Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
+	fbox_child->set_size_request(96,96);
+	file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
+	fbox_child->set_child(*f_entry);
+	fbox_child->set_focusable(false); // Fixes focus issue when renaming
+
+	Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
+	click_gesture->set_button(GDK_BUTTON_SECONDARY);
+	click_gesture->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &frog::on_right_clicked), fbox_child));
+	f_entry->add_controller(click_gesture);
+	std::lock_guard<std::mutex> lock(queue_mutex);
+	widget_queue.push(fbox_child);
+
+	auto source = Gtk::DragSource::create();
+	source->set_actions(Gdk::DragAction::COPY);
+	source->signal_prepare().connect([f_entry](const double &x, const double &y){
+		// This is probably not the right way to do this?
+		// It copies strings which is fine but we need to copy files
+		Glib::Value<Glib::ustring> ustring_value;
+		ustring_value.init(ustring_value.value_type());
+		ustring_value.set(f_entry->path);
+		return Gdk::ContentProvider::create(ustring_value);
+	}, false);
+	f_entry->add_controller(source);
 }
