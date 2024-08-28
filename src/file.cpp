@@ -1,5 +1,6 @@
 #include "file.hpp"
 #include "icons.hpp"
+#include "xdg_dirs.hpp"
 
 #include <iostream>
 #include <gtkmm/stack.h>
@@ -28,7 +29,10 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	is_directory=entry.is_directory();
 
 	if (is_directory) {
-		image.set_from_icon_name("default-folder");
+		if (xdg_dirs[path] != "")
+			image.set_from_icon_name(xdg_dirs[path]);
+		else
+			image.set_from_icon_name("default-folder");
 		return;
 	}
 
