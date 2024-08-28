@@ -104,7 +104,7 @@ void directory_watcher::watch_directory(const std::string &directory, std::stop_
 				// TODO: Do something with this
 				if (event->len) {
 					std::lock_guard<std::mutex> lock(queue_mutex);
-					event_name.push(event->name);
+					event_name.push(path + "/" + event->name);
 					if (event->mask & IN_CREATE) {
 						event_type.push("created");
 					} else if (event->mask & IN_DELETE) {
