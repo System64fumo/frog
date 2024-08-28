@@ -10,6 +10,7 @@
 #include <gtkmm/gestureclick.h>
 #include <giomm/menu.h>
 #include <giomm/simpleactiongroup.h>
+#include <filesystem>
 #include <atomic>
 #include <future>
 #include <mutex>
@@ -72,4 +73,5 @@ class frog : public Gtk::Window {
 		void menu_file_setup();
 		void menu_dir_setup();
 		void populate_files(const std::string &path);
+		void create_file_entry(const std::filesystem::directory_entry &entry);
 };
