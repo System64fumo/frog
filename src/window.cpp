@@ -322,8 +322,19 @@ void frog::on_dispatcher_file_change() {
 	if (event_type == "created") {
 	}
 	else if (event_type == "deleted") {
+		auto children = flowbox_files.get_children();
+		for (auto child : children) {
+			auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
+			auto f_entry = dynamic_cast<file_entry*>(fbox_child->get_child());
+			if (f_entry->path == event_name) {
+				// TODO: Remove popover
+				flowbox_files.remove(*fbox_child);
+				return;
+			}
+		}
 	}
 	else if (event_type == "modified") {
+		return; // For now this doesn't really matter
 	}
 	else if (event_type == "moved_from") {
 	}
