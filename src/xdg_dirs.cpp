@@ -4,12 +4,13 @@
 #include <algorithm>
 
 void get_xdg_user_dirs() {
-	std::ifstream file(std::getenv("HOME") + std::string("/.config/user-dirs.dirs"));
+	std::string home_dir = std::getenv("HOME");
+	std::ifstream file(home_dir + "/.config/user-dirs.dirs");
 
-	if (!file) {
-		std::cerr << "Could not open the user-dirs.dirs file" << std::endl;
+	if (!file)
 		return;
-	}
+
+	xdg_dirs[home_dir] = "folder-home";
 
 	std::string line;
 	while (std::getline(file, line)) {
@@ -27,7 +28,7 @@ void get_xdg_user_dirs() {
 			// Expand $HOME if present
 			size_t home_pos = key.find("$HOME");
 			if (home_pos != std::string::npos)
-				key.replace(home_pos, 5, std::getenv("HOME"));
+				key.replace(home_pos, 5, home_dir);
 
 			// Assign appropiate icon
 			std::transform(value.begin(), value.end(), value.begin(), ::tolower);
