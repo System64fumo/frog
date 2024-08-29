@@ -2,7 +2,6 @@
 #include "icons.hpp"
 #include "xdg_dirs.hpp"
 
-#include <iostream>
 #include <gtkmm/stack.h>
 #include <gtkmm/label.h>
 

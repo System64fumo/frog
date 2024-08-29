@@ -290,9 +290,10 @@ void frog::on_dispatcher_file_change() {
 	event_name = watcher->event_name.front();
 	watcher->event_name.pop();
 
+	// Temporary
 	std::cout << event_name << " " << event_type << std::endl;
 
-	// TODO: Actually handle the events
+	// Handle file events
 	if (event_type == "created") {
 		std::filesystem::directory_entry entry(event_name);
 		create_file_entry(entry);
@@ -320,16 +321,17 @@ void frog::on_dispatcher_file_change() {
 		return; // For now this doesn't really matter
 	}
 	else if (event_type == "moved_from") {
+		// TODO: This should basically classify as "remove"
 	}
 	else if (event_type == "moved_to") {
+		// TODO: This should basically classify as "created"
 	}
-	else
-		return;
-
-	// Temporary solution
-	std::string temp_path = current_path;
-	current_path = "";
-	populate_files(temp_path);
+	else {
+		// Fallback solution
+		std::string temp_path = current_path;
+		current_path = "";
+		populate_files(temp_path);
+	}
 }
 
 void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
