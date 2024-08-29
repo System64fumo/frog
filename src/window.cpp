@@ -10,7 +10,6 @@
 #include <gtkmm/droptarget.h>
 #include <gdkmm/clipboard.h>
 #include <glibmm/bytes.h>
-#include <iostream>
 
 frog::frog() {
 	set_title("Frog");
@@ -291,16 +290,18 @@ void frog::on_dispatcher_file_change() {
 	watcher->event_name.pop();
 
 	// Temporary
-	std::cout << event_name << " " << event_type << std::endl;
+	std::printf("File: %s %s\n", event_name.c_str(), event_type.c_str());
 
 	// Handle file events
-	if (event_type == "created") {
+	// TODO: While moving/renaming files can be done this way
+	// I would like to eventually just rename the label outright
+	if (event_type == "created" || event_type == "moved_to") {
 		std::filesystem::directory_entry entry(event_name);
 		create_file_entry(entry);
 		dispatcher_files.emit();
 		return;
 	}
-	else if (event_type == "deleted") {
+	else if (event_type == "deleted" || event_type == "moved_from") {
 		auto children = flowbox_files.get_children();
 		for (auto child : children) {
 			auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
@@ -319,12 +320,6 @@ void frog::on_dispatcher_file_change() {
 	}
 	else if (event_type == "modified") {
 		return; // For now this doesn't really matter
-	}
-	else if (event_type == "moved_from") {
-		// TODO: This should basically classify as "remove"
-	}
-	else if (event_type == "moved_to") {
-		// TODO: This should basically classify as "created"
 	}
 	else {
 		// Fallback solution

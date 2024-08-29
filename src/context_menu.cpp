@@ -1,7 +1,6 @@
 #include "window.hpp"
 #include "file.hpp"
 
-#include <iostream>
 #include <fstream>
 
 void frog::menu_file_setup() {
@@ -19,11 +18,11 @@ void frog::menu_file_setup() {
 
 	section1->append("Open With", "file.open");
 	action_group->add_action("open", [](){
-		std::cout << "Clicked: open" << std::endl;
+		std::printf("Clicked: open\n");
 	});
 	section1->append("Rename", "file.rename");
 	action_group->add_action("rename", [&](){
-		std::cout << "Clicked: rename" << std::endl;
+		std::printf("Clicked: rename\n");
 		auto selected = flowbox_files.get_selected_children()[0];
 		auto f_entry = dynamic_cast<file_entry*>(selected->get_child());
 		f_entry->label.start_editing();
@@ -31,18 +30,16 @@ void frog::menu_file_setup() {
 	});
 	section1->append("Delete", "file.delete");
 	action_group->add_action("delete", [&](){
-		std::cout << "Clicked: delete"  << std::endl;
 		auto children = flowbox_files.get_selected_children();
 		for (const auto& child : children) {
 			auto file = dynamic_cast<file_entry*>(child->get_child());
-			std::cout << file->path << std::endl;
 			std::filesystem::remove(file->path);
 		}
 	});
 
 	section2->append("Cut", "file.cut");
 	action_group->add_action("cut", [&](){
-		std::cout << "Clicked: cut" << std::endl;
+		std::printf("Clicked: cut\n");
 		Glib::RefPtr<Gdk::Clipboard> clipboard = get_clipboard();
 
 		std::string content = "cut";
@@ -58,7 +55,7 @@ void frog::menu_file_setup() {
 	});
 	section2->append("Copy", "file.copy");
 	action_group->add_action("copy", [&](){
-		std::cout << "Clicked: copy" << std::endl;
+		std::printf("Clicked: copy\n");
 		Glib::RefPtr<Gdk::Clipboard> clipboard = get_clipboard();
 
 		std::string content = "copy";
@@ -75,7 +72,7 @@ void frog::menu_file_setup() {
 
 	section3->append("Properties", "file.properties");
 	action_group->add_action("properties", [](){
-		std::cout << "Clicked: properties" << std::endl;
+		std::printf("Clicked: properties\n");
 	});
 }
 
@@ -99,8 +96,8 @@ void frog::menu_dir_setup() {
 			std::filesystem::create_directory(dir_path);
 		}
 		catch (const std::filesystem::filesystem_error& e) {
-			std::cerr << "Failed to create a new directory" << std::endl;
-			std::cerr << "Error: " << e.what() << std::endl;
+			std::fprintf(stderr, "Failed to create a new directory\n");
+			std::fprintf(stderr, "Error: %s\n", e.what());
 		}
 	});
 
@@ -109,13 +106,13 @@ void frog::menu_dir_setup() {
 		const std::string file_path{current_path + "/New file"};
 		std::ofstream file(file_path);
 		if (!file) {
-			std::cerr << "Failed to create a new file" << std::endl;
+			std::fprintf(stderr, "Failed to create a new file\n");
 		}
 	});
 
 	section2->append("Paste", "dir.paste");
 	action_group->add_action("paste", [&](){
-		std::cout << "Clicked: paste" << std::endl;
+		std::printf("Clicked: paste\n");
 		Glib::RefPtr<Gdk::Clipboard> clipboard = get_clipboard();
 		std::vector<Glib::ustring> mime_types = {"x-special/gnome-copied-files"};
 		clipboard->read_async(mime_types, Glib::PRIORITY_DEFAULT, [&, clipboard](Glib::RefPtr<Gio::AsyncResult>& result){
@@ -130,14 +127,14 @@ void frog::menu_dir_setup() {
 				gsize bytes_size = bytes->get_size();
 				auto byte_data = bytes->get_data(bytes_size);
 				std::string data = std::string(reinterpret_cast<const char*>(byte_data), bytes_size);
-				std::cout << data << std::endl;
+				std::printf("Data: %s\n", data.c_str());
 			});
 		});
 	});
 
 	section3->append("Properties", "dir.properties");
 	action_group->add_action("properties", [](){
-		std::cout << "Clicked: properties" << std::endl;
+		std::printf("Clicked: properties\n");
 	});
 }
 

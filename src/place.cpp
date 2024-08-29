@@ -14,5 +14,4 @@ place::place(std::string label_str, std::string path_str) {
 		image.set_from_icon_name(xdg_dirs[path_str]);
 	else
 		image.set_from_icon_name("folder-symbolic");
-;
 }
