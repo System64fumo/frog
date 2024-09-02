@@ -2,12 +2,14 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <filesystem>
 
 class disk {
 	public:
-		disk(const uint64_t& size, const std::vector<std::string>& parts);
+		disk(const std::filesystem::path& path);
 
 	private:
+		std::string device_name;
 		uint64_t size_in_b;
 		std::vector<std::string> partitions;
 };
