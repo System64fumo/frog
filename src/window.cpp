@@ -5,12 +5,12 @@
 #include "css.hpp"
 #include "config_parser.hpp"
 #include "icons.hpp"
+#include "disk.hpp"
 
 #include <gtkmm/dragsource.h>
 #include <gtkmm/droptarget.h>
 #include <gdkmm/clipboard.h>
 #include <glibmm/bytes.h>
-#include <fstream>
 
 frog::frog() {
 	set_title("Frog");
@@ -167,26 +167,7 @@ void frog::sidebar_setup() {
 		flowbox_places.append(*place_entry);
 	}
 
-	// Get disks
-	for (const auto& entry : std::filesystem::directory_iterator("/sys/block/")) {
-		if (entry.is_directory()) {
-			std::string device_name = entry.path().filename().string();
-			std::ifstream size_file(entry.path().string() + "/size");
-			std::uint64_t sectors = 0;
-			if (size_file.is_open())
-				size_file >> sectors;
-			sectors = sectors * 512;
-
-			std::printf("Block device: %s, Size: %ld Bytes\n", device_name.c_str(), sectors);
-			for (const auto& entry : std::filesystem::directory_iterator(entry.path().string())) {
-				if (entry.is_directory()) {
-					std::string partition_name = entry.path().filename().string();
-					if (partition_name.find(device_name) == 0)
-						std::printf("  Partition: %s\n", partition_name.c_str());
-				}
-			}
-		}
-	}
+	get_disks();
 }
 
 void frog::on_entry_done() {
