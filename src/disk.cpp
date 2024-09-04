@@ -59,18 +59,18 @@ std::string to_human_readable(const uint64_t& bytes) {
 
 disk::disk(const std::filesystem::path& path) {
 	device_name = path.filename().string();
-	uint64_t size = get_size(path.string());
-
-	std::printf("Block device: %s, Size: %s\n", device_name.c_str(), to_human_readable(size).c_str());
+	//uint64_t disk_size = get_size(path.string());
 
 	for (const auto& entry : std::filesystem::directory_iterator(path)) {
 		if (entry.is_directory()) {
-			std::string partition_name = entry.path().filename().string();
-			if (partition_name.find(device_name) == 0) {
-				partitions.push_back(partition_name);
-				uint64_t part_size = get_size(entry.path().string());
-				std::printf("  Partition: %s, Size %s\n", partition_name.c_str(), to_human_readable(part_size).c_str());
-			}
+			partition part;
+			part.name = entry.path().filename().string();
+
+			// Get the partition size
+			if (part.name.find(device_name) == 0)
+				part.size = get_size(entry.path().string());
+
+			partitions.push_back(part);
 		}
 	}
 }

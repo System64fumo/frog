@@ -1,5 +1,5 @@
 EXEC = frog
-PKGS = gtkmm-4.0 libmagic
+PKGS = gtkmm-4.0
 SRCS +=	$(wildcard src/*.cpp)
 OBJS = $(SRCS:.cpp=.o)
 DESTDIR = $(HOME)/.local

@@ -174,11 +174,10 @@ void frog::sidebar_setup() {
 			continue;
 
 		disk d(entry.path());
-		for (const std::string& partition : d.partitions) {
-			auto it = mounts.find(partition);
+		for (const disk::partition& partition : d.partitions) {
+			auto it = mounts.find(partition.name);
 			if (it != mounts.end()) {
-				std::printf("Partition is mounted\n");
-				place *place_entry = Gtk::make_managed<place>(partition, it->second, "drive-harddisk-symbolic");
+				place *place_entry = Gtk::make_managed<place>(partition.name, it->second, "drive-harddisk-symbolic");
 				flowbox_places.append(*place_entry);
 			}
 		}
@@ -287,6 +286,21 @@ void frog::populate_files(const std::string &path) {
 
 	watcher = new directory_watcher(&dispatcher_file_change);
 	watcher->start_watching(path);
+
+	// Select pinned entry from sidebar if exists
+	bool path_found = false;
+	for (auto child : flowbox_places.get_children()) {
+		auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
+		place *sidebar_place = dynamic_cast<place*>(fbox_child->get_child());
+		if (sidebar_place->file_path == path) {
+			flowbox_places.select_child(*fbox_child);
+			path_found = true;
+			break;
+		}
+	}
+
+	if (!path_found)
+		flowbox_places.unselect_all();
 }
 
 void frog::on_dispatcher_files() {
