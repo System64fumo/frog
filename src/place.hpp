@@ -5,7 +5,7 @@
 
 class place : public Gtk::Box {
 	public:
-		place(std::string label_str, std::string path_str);
+		place(std::string label_str, std::string path_str, std::string custom_icon = "");
 
 		std::string file_path;
 
