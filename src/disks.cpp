@@ -2,6 +2,23 @@
 
 #include <fstream>
 
+std::map<std::string, std::string> get_mounts() {
+	std::map<std::string, std::string> mounted_partitions;
+	std::ifstream mounts("/proc/mounts");
+	std::string device, mount_point, rest;
+
+	while (mounts >> device >> mount_point) {
+		std::getline(mounts, rest); // Skip the rest of the line
+		const std::string prefix = "/dev/";
+		if (device.compare(0, prefix.size(), prefix) == 0)
+			device.erase(0, prefix.size());
+
+		mounted_partitions[device] = mount_point;
+	}
+
+	return mounted_partitions;
+}
+
 uint64_t get_size(const std::string& path) {
 	std::ifstream size_file(path + "/size");
 	std::uint64_t sectors = 0;
@@ -56,17 +73,4 @@ disk::disk(const std::filesystem::path& path) {
 			}
 		}
 	}
-}
-
-// TODO: Put this back in the sidebar section
-std::vector<disk> get_disks() {
-	std::vector<disk> disks;
-	for (const auto& entry : std::filesystem::directory_iterator("/sys/block/")) {
-		if (!entry.is_directory())
-			continue;
-
-		disk d(entry.path());
-		disks.push_back(d);
-	}
-	return disks;
 }
