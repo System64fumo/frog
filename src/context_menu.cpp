@@ -128,6 +128,31 @@ void frog::menu_dir_setup() {
 				auto byte_data = bytes->get_data(bytes_size);
 				std::string data = std::string(reinterpret_cast<const char*>(byte_data), bytes_size);
 				std::printf("Data: %s\n", data.c_str());
+
+				std::istringstream stream(data);
+				std::string line;
+
+				std::string operation;
+				std::getline(stream, operation);
+
+				// TODO: Remove escape sequences (eg %20 for space)
+				std::vector<std::filesystem::path> file_paths;
+				while (std::getline(stream, line))
+					file_paths.push_back(line.substr(7));
+
+				std::printf("Operation: %s\n", operation.c_str());
+				for (const auto& path : file_paths) {
+					if (operation == "copy") {
+						std::printf("Copying: %s to %s\n", path.string().c_str(), current_path.c_str());
+						std::filesystem::copy_file(path, current_path / path.filename(), std::filesystem::copy_options::overwrite_existing);
+					}
+					else if (operation == "cut") {
+						// TODO: Run an optional validation check here to ensure the file was copied properly
+						std::printf("Moving: %s to %s\n", path.string().c_str(), current_path.c_str());
+						std::filesystem::rename(path, current_path / path.filename());
+					}
+				}
+
 			});
 		});
 	});
