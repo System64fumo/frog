@@ -181,7 +181,8 @@ void frog::sidebar_setup() {
 		for (const disk::partition& partition : d.partitions) {
 			auto it = mounts.find(partition.name);
 			if (it != mounts.end()) {
-				place *place_entry = Gtk::make_managed<place>(partition.name, it->second, "drive-harddisk-symbolic");
+				std::string label = (!partition.label.empty()) ? partition.label : partition.name;
+				place *place_entry = Gtk::make_managed<place>(label, it->second, "drive-harddisk-symbolic");
 				flowbox_places.append(*place_entry);
 			}
 		}

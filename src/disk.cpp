@@ -1,5 +1,6 @@
 #include "disk.hpp"
 
+#include <blkid/blkid.h>
 #include <fstream>
 
 std::map<std::string, std::string> get_mounts() {
@@ -67,8 +68,20 @@ disk::disk(const std::filesystem::path& path) {
 			part.name = entry.path().filename().string();
 
 			// Get the partition size
-			if (part.name.find(device_name) == 0)
+			if (part.name.find(device_name) == 0) {
+				std::string part_path = "/dev/" + part.name;
+				blkid_probe pr = blkid_new_probe_from_filename(part_path.c_str());
+				blkid_probe_enable_partitions(pr, true);
+				blkid_probe_set_superblocks_flags(pr, BLKID_SUBLKS_USAGE | BLKID_SUBLKS_TYPE |
+					BLKID_SUBLKS_MAGIC | BLKID_SUBLKS_LABEL);
+				blkid_do_fullprobe(pr);
+				const char* label = nullptr;
+				blkid_probe_lookup_value(pr, "LABEL", &label, nullptr);
+				if (label)
+					part.label = label;
 				part.size = get_size(entry.path().string());
+				blkid_free_probe(pr);
+			}
 
 			partitions.push_back(part);
 		}
