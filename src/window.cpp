@@ -34,9 +34,15 @@ frog::frog() {
 	entry_path.get_style_context()->add_class("path_bar");
 	entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_entry_done));
 
+	// Somehow adding this box fixes critical errors when dragging to select several files/folders??
+	// It also seems to fix drag and drop in general..
+	// Why.. How..
+	Gtk::Box *box = Gtk::make_managed<Gtk::Box>();
 	box_container.append(scrolled_window_files);
-	scrolled_window_files.set_child(flowbox_files);
+	scrolled_window_files.set_child(*box);
 	scrolled_window_files.set_vexpand(true);
+
+	box->append(flowbox_files);
 
 	Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
 	Glib::RefPtr<Gtk::GestureClick> right_click_gesture = Gtk::GestureClick::create();
@@ -76,9 +82,7 @@ frog::frog() {
 	flowbox_files.set_row_spacing(30);
 	flowbox_files.set_column_spacing(30);
 
-	// Multiple selection is disabled due to warn spam in stdout
-	// Also because it breaks drag and drop
-	//flowbox_files.set_selection_mode(Gtk::SelectionMode::MULTIPLE);
+	flowbox_files.set_selection_mode(Gtk::SelectionMode::MULTIPLE);
 	const GType ustring_type = Glib::Value<Glib::ustring>::value_type();
 	auto target = Gtk::DropTarget::create(ustring_type, Gdk::DragAction::COPY);
 	target->signal_drop().connect([](const Glib::ValueBase& value, double, double) {
