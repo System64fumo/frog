@@ -1,0 +1,40 @@
+window {
+	background: @theme_bg_color;
+}
+
+.path_bar {
+	margin: 5px;
+	background: alpha(CurrentColor, 0.05);
+}
+
+.file_container {
+	background: @theme_base_color;
+}
+.file_container flowbox {
+	margin: 5px;
+}
+.file_container flowboxchild:hover {
+	background: alpha(CurrentColor, 0.1);
+}
+
+.navbar button {
+	margin: 5px;
+}
+
+.sidebar {
+	background: transparent;
+	border-right: 1px solid @borders;
+}
+.sidebar flowboxchild {
+	min-height: 30px;
+	padding-left: 10px;
+	padding-right: 10px;
+	margin: 5px 5px 0px 5px;
+}
+.sidebar flowboxchild:hover {
+	background: alpha(CurrentColor, 0.1);
+}
+
+flowboxchild {
+	transition: all 0.1s linear;
+}
