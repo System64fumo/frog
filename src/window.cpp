@@ -11,6 +11,7 @@
 #include <gtkmm/droptarget.h>
 #include <gdkmm/clipboard.h>
 #include <glibmm/bytes.h>
+#include <sys/statvfs.h>
 
 frog::frog() {
 	set_title("Frog");
@@ -157,6 +158,7 @@ void frog::sidebar_setup() {
 
 	scrolled_window_places.set_child(flowbox_places);
 	scrolled_window_places.set_vexpand(true);
+	scrolled_window_places.set_hexpand_set(true);
 	flowbox_places.set_valign(Gtk::Align::START);
 	flowbox_places.set_max_children_per_line(1);
 
@@ -182,7 +184,13 @@ void frog::sidebar_setup() {
 			auto it = mounts.find(partition.name);
 			if (it != mounts.end()) {
 				std::string label = (!partition.label.empty()) ? partition.label : partition.name;
-				place *place_entry = Gtk::make_managed<place>(label, it->second, "drive-harddisk-symbolic");
+				struct statvfs stats;
+				statvfs(it->second.c_str(), &stats);
+				unsigned long total_bytes = stats.f_blocks * stats.f_frsize;
+				unsigned long free_bytes = stats.f_bfree * stats.f_frsize;
+				unsigned long used_bytes = total_bytes - free_bytes;
+				double used = (double)used_bytes / (double)total_bytes;
+				place *place_entry = Gtk::make_managed<place>(label, it->second, "drive-harddisk-symbolic", used);
 				flowbox_places.append(*place_entry);
 			}
 		}
