@@ -2,6 +2,7 @@
 #include "file.hpp"
 
 #include <fstream>
+#include <algorithm>
 
 void frog::menu_file_setup() {
 	menu_file = Gio::Menu::create();
@@ -184,6 +185,12 @@ void frog::on_right_clicked(const int &n_press,
 							const double &x,
 							const double &y,
 							Gtk::FlowBoxChild *flowbox_child) {
+
+	// TODO: Handle multi selection right clicks
+	// Check if the child is in the selection
+	auto children = flowbox_files.get_selected_children();
+	if (std::find(children.begin(), children.end(), flowbox_child) == children.end())
+		flowbox_files.unselect_all();
 
 	flowbox_files.select_child(*flowbox_child);
 
