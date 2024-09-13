@@ -112,7 +112,16 @@ void frog::menu_dir_setup() {
 	section1->append("Create New File", "dir.newfile");
 	action_group->add_action("newfile", [&](){
 		const std::string file_path{current_path + "/New file"};
-		std::ofstream file(file_path);
+
+		std::string desired_name = file_path;
+		int suffix = 0;
+
+		while (std::filesystem::exists(desired_name)) {
+			suffix++;
+			desired_name = file_path + "-" + std::to_string(suffix);
+		}
+
+		std::ofstream file(desired_name);
 		if (!file) {
 			std::fprintf(stderr, "Failed to create a new file\n");
 		}
