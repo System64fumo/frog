@@ -4,6 +4,7 @@
 
 #include <gtkmm/stack.h>
 #include <gtkmm/label.h>
+#include <gtkmm/text.h>
 
 file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	path = entry.path();
@@ -19,9 +20,13 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	label.set_halign(Gtk::Align::CENTER);
 	auto stack = dynamic_cast<Gtk::Stack*>(label.get_children()[0]);
 	auto ulabel = dynamic_cast<Gtk::Label*>(stack->get_children()[0]);
+	auto text = dynamic_cast<Gtk::Text*>(stack->get_children()[1]);
+	stack->set_hhomogeneous(false);
 	ulabel->set_justify(Gtk::Justification::CENTER);
 	ulabel->set_ellipsize(Pango::EllipsizeMode::END);
-	ulabel->set_max_width_chars(0);
+	ulabel->set_max_width_chars(10);
+	text->set_propagate_text_width(true);
+	text->set_max_width_chars(10);
 
 	// Handle renaming
 	label.signal_state_flags_changed().connect([&, entry](Gtk::StateFlags state_flags) {

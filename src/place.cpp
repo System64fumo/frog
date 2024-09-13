@@ -6,7 +6,8 @@ place::place(std::string label_str, std::string path_str, std::string custom_ico
 	get_style_context()->add_class("place");
 	append(image);
 
-	image.set_margin_end(5);
+	set_size_request(-1, 30);
+	image.set_margin_end(7);
 	label.set_text(label_str);
 	label.set_halign(Gtk::Align::START);
 
