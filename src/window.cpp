@@ -7,6 +7,7 @@
 #include "icons.hpp"
 #include "disk.hpp"
 
+#include <gtkmm/separator.h>
 #include <gtkmm/dragsource.h>
 #include <gtkmm/droptarget.h>
 #include <gdkmm/clipboard.h>
@@ -173,6 +174,10 @@ void frog::sidebar_setup() {
 		flowbox_places.append(*place_entry);
 	}
 
+	Gtk::Separator *separator = Gtk::make_managed<Gtk::Separator>();
+	flowbox_places.append(*separator);
+	separator->get_parent()->set_sensitive(false);
+
 	std::map<std::string, std::string> mounts = get_mounts();
 	std::vector<disk> disks;
 	for (const auto& entry : std::filesystem::directory_iterator("/sys/block/")) {
@@ -234,6 +239,9 @@ void frog::on_filebox_child_activated(Gtk::FlowBoxChild* child) {
 
 void frog::on_places_child_activated(Gtk::FlowBoxChild *child) {
 	place *place_entry = dynamic_cast<place*>(child->get_child());
+	if (!place_entry)
+		return;
+
 	next_paths.clear();
 	populate_files(place_entry->file_path);
 }
@@ -305,6 +313,10 @@ void frog::populate_files(const std::string &path) {
 	for (auto child : flowbox_places.get_children()) {
 		auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
 		place *sidebar_place = dynamic_cast<place*>(fbox_child->get_child());
+
+		if (!sidebar_place)
+			continue;
+
 		if (sidebar_place->file_path == path) {
 			flowbox_places.select_child(*fbox_child);
 			path_found = true;

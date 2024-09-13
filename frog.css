@@ -26,7 +26,6 @@ window {
 	border-right: 1px solid @borders;
 }
 .sidebar flowboxchild {
-	min-height: 30px;
 	padding-left: 10px;
 	padding-right: 10px;
 	margin: 5px 5px 0px 5px;
@@ -35,6 +34,18 @@ window {
 	background: alpha(CurrentColor, 0.1);
 }
 
+.place progressbar trough {
+	min-height: 3px;
+}
+
 flowboxchild {
 	transition: all 0.1s linear;
+}
+
+editablelabel.editing text {
+	border-radius: 4px;
+}
+
+editablelabel.editing selection {
+	background: @theme_selected_bg_color;
 }
