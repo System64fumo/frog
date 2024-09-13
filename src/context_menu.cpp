@@ -91,9 +91,17 @@ void frog::menu_dir_setup() {
 
 	section1->append("Create New Folder", "dir.newdir");
 	action_group->add_action("newdir", [&](){
-		const std::filesystem::path dir_path{current_path + "/New Folder"};
+		std::string path = current_path + "/New Folder";
+		std::string desired_name = path;
+		int suffix = 0;
+
+		while (std::filesystem::exists(desired_name)) {
+			suffix++;
+			desired_name = path + "-" + std::to_string(suffix);
+		}
+
 		try {
-			std::filesystem::create_directory(dir_path);
+			std::filesystem::create_directory(desired_name);
 		}
 		catch (const std::filesystem::filesystem_error& e) {
 			std::fprintf(stderr, "Failed to create a new directory\n");
