@@ -160,7 +160,7 @@ void frog::sidebar_setup() {
 	flowbox_places.append(*separator);
 	separator->get_parent()->set_sensitive(false);
 
-	std::map<std::string, std::string> mounts = get_mounts();
+	std::map<std::string, std::string> mounts = disk::get_mounts();
 	std::vector<disk> disks;
 	for (const auto& entry : std::filesystem::directory_iterator("/sys/block/")) {
 		if (!entry.is_directory())
