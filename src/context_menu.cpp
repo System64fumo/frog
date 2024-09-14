@@ -34,7 +34,7 @@ void frog::menu_file_setup() {
 		auto children = flowbox_files.get_selected_children();
 		for (const auto& child : children) {
 			auto file = dynamic_cast<file_entry*>(child->get_child());
-			std::filesystem::remove(file->path);
+			std::filesystem::remove_all(file->path);
 		}
 	});
 
