@@ -112,37 +112,19 @@ void frog::navbar_setup() {
 	button_previous.get_style_context()->add_class("flat");
 	button_previous.set_icon_name("go-previous-symbolic");
 	button_previous.set_sensitive(false);
-	button_previous.signal_clicked().connect([&]() {
-		std::string new_path = back_paths.back();
-		populate_files(new_path);
-		next_paths.push_back(back_paths.back());
-		back_paths.pop_back();
-		back_paths.pop_back();
-		button_previous.set_sensitive((back_paths.size() != 1));
-		button_next.set_sensitive(next_paths.size() != 0);
-	});
+	button_previous.signal_clicked().connect(sigc::mem_fun(*this, &frog::navigate_hist_previous));
 
 	box_navigation.append(button_next);
 	button_next.get_style_context()->add_class("flat");
 	button_next.set_icon_name("go-next-symbolic");
 	button_next.set_sensitive(false);
-	button_next.signal_clicked().connect([&]() {
-		std::string new_path = next_paths.back();
-		next_paths.pop_back();
-		populate_files(new_path);
-		button_next.set_sensitive(next_paths.size() != 0);
-	});
+	button_next.signal_clicked().connect(sigc::mem_fun(*this, &frog::navigate_hist_forward));
 
-	// TODO: Add checks for up button sensitivity
 	box_navigation.append(button_up);
 	button_up.get_style_context()->add_class("flat");
 	button_up.set_icon_name("go-up-symbolic");
 	button_up.set_sensitive(true);
-	button_up.signal_clicked().connect([&]() {
-		std::filesystem::path path = current_path;
-		std::filesystem::path parent_path = path.parent_path();
-		populate_files(parent_path.string());
-	});
+	button_up.signal_clicked().connect(sigc::mem_fun(*this, &frog::navigate_up_dir));
 
 	//box_navigation.append(button_search);
 	//button_search.get_style_context()->add_class("flat");
@@ -204,7 +186,7 @@ void frog::sidebar_setup() {
 }
 
 void frog::on_entry_done() {
-	populate_files(entry_path.get_buffer()->get_text().raw());
+	navigate_to_dir(entry_path.get_buffer()->get_text().raw());
 }
 
 int frog::sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2) {
@@ -229,7 +211,7 @@ void frog::on_filebox_child_activated(Gtk::FlowBoxChild* child) {
 	if (entry->is_directory) {
 		std::string new_path = path + "/" + entry->label.get_text();
 		next_paths.clear();
-		populate_files(new_path);
+		navigate_to_dir(new_path);
 	}
 	else {
 		std::string cmd = "xdg-open \"" + path + '/' + entry->label.get_text() + '"';
@@ -243,89 +225,7 @@ void frog::on_places_child_activated(Gtk::FlowBoxChild *child) {
 		return;
 
 	next_paths.clear();
-	populate_files(place_entry->file_path);
-}
-
-void frog::populate_files(const std::string &path) {
-	std::filesystem::path fs_path = path;
-
-	if (fs_path.filename() == ".") {
-		fs_path = fs_path.parent_path();
-		entry_path.set_text(fs_path.string());
-	}
-
-	fs_path = fs_path.lexically_normal();
-
-	std::string path_str = fs_path.string();
-	if (path_str.back() == '/' && path_str != "/") {
-		path_str.pop_back();
-		path_str.pop_back();
-	}
-
-	if (path_str == current_path)
-		return;
-
-	if (!std::filesystem::exists(path_str)) {
-		entry_path.set_text(current_path);
-		return;
-	}
-
-	back_paths.push_back(current_path);
-	current_path = path_str;
-	button_previous.set_sensitive(back_paths.size() != 1);
-	button_next.set_sensitive(next_paths.size() != 0);
-
-	entry_path.set_text(current_path);
-
-	if (async_task.valid()) {
-		stop_flag.store(true);
-		async_task.wait();
-	}
-
-	// Cleanup
-	std::queue<Gtk::FlowBoxChild*> empty;
-	std::swap(widget_queue, empty);
-	popovermenu_context_menu.unparent();
-	flowbox_files.remove_all();
-
-	stop_flag.store(false);
-	async_task = std::async(std::launch::async, [this, path]() {
-		for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(path)) {
-			if (stop_flag.load())
-				break;
-			create_file_entry(entry);
-			dispatcher_files.emit();
-		}
-	});
-
-	if (watcher != nullptr) {
-		if (watcher->path == path)
-			return;
-		else
-			delete watcher;
-	}
-
-	watcher = new directory_watcher(&dispatcher_file_change);
-	watcher->start_watching(path);
-
-	// Select pinned entry from sidebar if exists
-	bool path_found = false;
-	for (auto child : flowbox_places.get_children()) {
-		auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
-		place *sidebar_place = dynamic_cast<place*>(fbox_child->get_child());
-
-		if (!sidebar_place)
-			continue;
-
-		if (sidebar_place->file_path == path) {
-			flowbox_places.select_child(*fbox_child);
-			path_found = true;
-			break;
-		}
-	}
-
-	if (!path_found)
-		flowbox_places.unselect_all();
+	navigate_to_dir(place_entry->file_path);
 }
 
 void frog::on_dispatcher_files() {
@@ -382,7 +282,7 @@ void frog::on_dispatcher_file_change() {
 		// Fallback solution
 		std::string temp_path = current_path;
 		current_path = "";
-		populate_files(temp_path);
+		navigate_to_dir(temp_path);
 	}
 }
 
