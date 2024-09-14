@@ -275,7 +275,7 @@ void frog::populate_files(const std::string &path) {
 	button_previous.set_sensitive(back_paths.size() != 1);
 	button_next.set_sensitive(next_paths.size() != 0);
 
-	entry_path.set_text(path);
+	entry_path.set_text(current_path);
 
 	if (async_task.valid()) {
 		stop_flag.store(true);
