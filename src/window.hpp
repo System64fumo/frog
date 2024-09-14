@@ -72,6 +72,11 @@ class frog : public Gtk::Window {
 		void sidebar_setup();
 		void menu_file_setup();
 		void menu_dir_setup();
-		void populate_files(const std::string &path);
 		void create_file_entry(const std::filesystem::directory_entry &entry);
+
+		void navigate_hist_previous();
+		void navigate_hist_forward();
+		void navigate_up_dir();
+		void navigate_to_dir(const std::string &path);
+
 };
