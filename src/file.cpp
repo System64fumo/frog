@@ -29,13 +29,11 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	text->set_max_width_chars(10);
 
 	// Handle renaming
-	label.signal_state_flags_changed().connect([&, entry](Gtk::StateFlags state_flags) {
-		if ((int)state_flags == 24704) {
-			if (label.get_text() != file_name.c_str()) {
-				std::string cur_path = entry.path().parent_path();
-				std::string new_name = label.get_text();
-				std::filesystem::rename(path, cur_path + "/" + new_name);
-			}
+	label.property_editing().signal_changed().connect([&, entry]() {
+		if (label.get_text() != file_name.c_str()) {
+			std::string cur_path = entry.path().parent_path();
+			std::string new_name = label.get_text();
+			std::filesystem::rename(path, cur_path + "/" + new_name);
 		}
 	});
 
