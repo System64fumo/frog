@@ -8,7 +8,6 @@
 #include "disk.hpp"
 
 #include <gtkmm/separator.h>
-#include <gtkmm/dragsource.h>
 #include <gtkmm/droptarget.h>
 #include <gdkmm/clipboard.h>
 #include <glibmm/bytes.h>
@@ -89,6 +88,7 @@ frog::frog() {
 	auto target = Gtk::DropTarget::create(ustring_type, Gdk::DragAction::COPY);
 	target->signal_drop().connect([](const Glib::ValueBase& value, double, double) {
 		// Can't add code here yet since drag and drop is broken in Hyprland at the moment..
+		std::printf("Got data\n");
 		return true;
 	}, false);
 	flowbox_files.add_controller(target);
@@ -300,15 +300,5 @@ void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
 	std::lock_guard<std::mutex> lock(queue_mutex);
 	widget_queue.push(fbox_child);
 
-	auto source = Gtk::DragSource::create();
-	source->set_actions(Gdk::DragAction::COPY);
-	source->signal_prepare().connect([f_entry](const double &x, const double &y){
-		// This is probably not the right way to do this?
-		// It copies strings which is fine but we need to copy files
-		Glib::Value<Glib::ustring> ustring_value;
-		ustring_value.init(ustring_value.value_type());
-		ustring_value.set(f_entry->path);
-		return Gdk::ContentProvider::create(ustring_value);
-	}, false);
-	f_entry->add_controller(source);
+	f_entry->get_style_context()->add_class("file_entry");
 }

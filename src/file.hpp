@@ -15,6 +15,7 @@ class file_entry : public Gtk::Box {
 		Gtk::EditableLabel label;
 
 	private:
+		int icon_size = 64;
 		std::string file_name;
 		int file_size;
 		std::string file_icon;
