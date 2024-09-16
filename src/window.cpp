@@ -11,6 +11,7 @@
 #include <gtkmm/droptarget.h>
 #include <gdkmm/clipboard.h>
 #include <glibmm/bytes.h>
+#include <glibmm/vectorutils.h>
 #include <sys/statvfs.h>
 
 frog::frog() {
@@ -84,13 +85,17 @@ frog::frog() {
 	flowbox_files.set_column_spacing(30);
 
 	flowbox_files.set_selection_mode(Gtk::SelectionMode::MULTIPLE);
-	const GType ustring_type = Glib::Value<Glib::ustring>::value_type();
-	auto target = Gtk::DropTarget::create(ustring_type, Gdk::DragAction::COPY);
+	auto target = Gtk::DropTarget::create(GDK_TYPE_FILE_LIST, Gdk::DragAction::MOVE);
 	target->signal_drop().connect([](const Glib::ValueBase& value, double, double) {
-		// TODO: Maybe i'm doing it wrong but this doesn't seem to read everything properly
-		Glib::Value<Glib::ustring> ustring_value;
-		ustring_value.init(value.gobj());
-		std::printf("Got: %s\n", ustring_value.get().c_str());
+		Glib::Value<GSList*> gslist_value;
+		gslist_value.init(value.gobj());
+		auto files = Glib::SListHandler<Glib::RefPtr<Gio::File>>::slist_to_vector(gslist_value.get(), Glib::OwnershipType::OWNERSHIP_NONE);
+		for (const auto& file_ptr : files) {
+			if (file_ptr) {
+				std::printf("File path: %s\n", file_ptr->get_path().c_str());
+			}
+		}
+
 		return true;
 	}, false);
 	flowbox_files.add_controller(target);
