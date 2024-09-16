@@ -77,14 +77,14 @@ void frog::navigate_to_dir(const std::string &path) {
 	});
 
 	if (watcher != nullptr) {
-		if (watcher->path == path)
+		if (watcher->path == current_path)
 			return;
 		else
 			delete watcher;
 	}
 
 	watcher = new directory_watcher(&dispatcher_file_change);
-	watcher->start_watching(path);
+	watcher->start_watching(current_path);
 
 	// Select pinned entry from sidebar if exists
 	bool path_found = false;
@@ -95,7 +95,7 @@ void frog::navigate_to_dir(const std::string &path) {
 		if (!sidebar_place)
 			continue;
 
-		if (sidebar_place->file_path == path) {
+		if (sidebar_place->file_path == current_path) {
 			flowbox_places.select_child(*fbox_child);
 			path_found = true;
 			break;
