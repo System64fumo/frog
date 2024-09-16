@@ -19,4 +19,6 @@ class file_entry : public Gtk::Box {
 		std::string file_name;
 		int file_size;
 		std::string file_icon;
+
+		void setup_drop_target();
 };
