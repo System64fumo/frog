@@ -87,8 +87,10 @@ frog::frog() {
 	const GType ustring_type = Glib::Value<Glib::ustring>::value_type();
 	auto target = Gtk::DropTarget::create(ustring_type, Gdk::DragAction::COPY);
 	target->signal_drop().connect([](const Glib::ValueBase& value, double, double) {
-		// Can't add code here yet since drag and drop is broken in Hyprland at the moment..
-		std::printf("Got data\n");
+		// TODO: Maybe i'm doing it wrong but this doesn't seem to read everything properly
+		Glib::Value<Glib::ustring> ustring_value;
+		ustring_value.init(value.gobj());
+		std::printf("Got: %s\n", ustring_value.get().c_str());
 		return true;
 	}, false);
 	flowbox_files.add_controller(target);
