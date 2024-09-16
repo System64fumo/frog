@@ -3,11 +3,13 @@
 #include "xdg_dirs.hpp"
 
 #include <gtkmm/dragsource.h>
+#include <gtkmm/droptarget.h>
 #include <gtkmm/stack.h>
 #include <gtkmm/label.h>
 #include <gtkmm/text.h>
 #include <giomm/file.h>
 #include <gtkmm/icontheme.h>
+#include <glibmm/vectorutils.h>
 
 file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	path = entry.path();
@@ -64,7 +66,7 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 			file_icon = xdg_dirs[path];
 		else
 			file_icon = "default-folder";
-		
+		setup_drop_target();
 	}
 	else {
 		size_t last_dot_pos = file_name.rfind('.');
@@ -90,4 +92,21 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 
 	image.set(icon);
 	source->set_icon(icon, icon_size / 2, icon_size / 2);
+}
+
+void file_entry::setup_drop_target() {
+	auto target = Gtk::DropTarget::create(GDK_TYPE_FILE_LIST, Gdk::DragAction::MOVE);
+	target->signal_drop().connect([](const Glib::ValueBase& value, double, double) {
+		Glib::Value<GSList*> gslist_value;
+		gslist_value.init(value.gobj());
+		auto files = Glib::SListHandler<Glib::RefPtr<Gio::File>>::slist_to_vector(gslist_value.get(), Glib::OwnershipType::OWNERSHIP_NONE);
+		for (const auto& file_ptr : files) {
+			if (file_ptr) {
+				std::printf("File path: %s\n", file_ptr->get_path().c_str());
+			}
+		}
+
+		return true;
+	}, false);
+	add_controller(target);
 }
