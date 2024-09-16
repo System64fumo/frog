@@ -51,12 +51,22 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	source->set_actions(Gdk::DragAction::COPY);
 
 	source->signal_prepare().connect([&](const double &x, const double &y) {
-		// This is probably not the right way to do this?
-		// It copies strings which is fine but we need to copy files
-		Glib::Value<Glib::ustring> ustring_value;
-		ustring_value.init(ustring_value.value_type());
-		ustring_value.set(path);
-		return Gdk::ContentProvider::create(ustring_value);
+		std::vector<Glib::RefPtr<Gio::File>> file_list = {
+			Gio::File::create_for_path(path)
+		};
+
+		GSList* list = nullptr;
+		for (const auto& file : file_list) {
+			list = g_slist_prepend(list, file->gobj());
+		}
+		list = g_slist_reverse(list);
+
+		// TODO: Figure out why this segfaults
+		Glib::Value<GSList*> value;
+		value.init(GDK_TYPE_FILE_LIST);
+		value.set(list);
+
+		return Gdk::ContentProvider::create(value);
 	}, false);
 	add_controller(source);
 
