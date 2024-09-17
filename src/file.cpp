@@ -51,22 +51,14 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	source->set_actions(Gdk::DragAction::COPY);
 
 	source->signal_prepare().connect([&](const double &x, const double &y) {
-		std::vector<Glib::RefPtr<Gio::File>> file_list = {
-			Gio::File::create_for_path(path)
-		};
+		// TODO: Replace C implementation with the proper C++ implementation
+		// I have spent far too much time on this..
+		GFile *file = g_file_new_for_path(path.c_str());
+		GdkContentProvider *contentProvider;
+		GdkFileList* fileList = gdk_file_list_new_from_array(&file, 1);
+		contentProvider = gdk_content_provider_new_typed(GDK_TYPE_FILE_LIST, fileList);
 
-		GSList* list = nullptr;
-		for (const auto& file : file_list) {
-			list = g_slist_prepend(list, file->gobj());
-		}
-		list = g_slist_reverse(list);
-
-		// TODO: Figure out why this segfaults
-		Glib::Value<GSList*> value;
-		value.init(GDK_TYPE_FILE_LIST);
-		value.set(list);
-
-		return Gdk::ContentProvider::create(value);
+		return Glib::wrap(contentProvider);
 	}, false);
 	add_controller(source);
 
