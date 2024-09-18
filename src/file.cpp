@@ -48,7 +48,7 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 
 	// Set up drag and drop
 	auto source = Gtk::DragSource::create();
-	source->set_actions(Gdk::DragAction::COPY);
+	source->set_actions(Gdk::DragAction::MOVE);
 
 	source->signal_prepare().connect([&](const double &x, const double &y) {
 		// TODO: Replace C implementation with the proper C++ implementation
@@ -60,6 +60,23 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 
 		return Glib::wrap(contentProvider);
 	}, false);
+	source->signal_drag_end().connect([](const Glib::RefPtr<Gdk::Drag>& drag, bool delete_data) {
+		// TODO: This does not report the correct action
+		//
+		// DO NOT IMPLEMENT A DELETE FUNCTION UNTIL THIS IS RESOLVED
+		//
+
+		auto selected = drag->get_selected_action();
+		if ((selected & Gdk::DragAction::MOVE) == Gdk::DragAction::MOVE)
+			std::printf("Move\n");
+		else if ((selected & Gdk::DragAction::COPY) == Gdk::DragAction::COPY)
+			std::printf("Copy\n");
+
+		if (delete_data)
+			std::printf("Delete data\n");
+		else
+			std::printf("Don't delete data\n");
+	});
 	add_controller(source);
 
 	// Figure out what icon to use
@@ -98,13 +115,15 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 
 void file_entry::setup_drop_target() {
 	auto target = Gtk::DropTarget::create(GDK_TYPE_FILE_LIST, Gdk::DragAction::MOVE);
-	target->signal_drop().connect([](const Glib::ValueBase& value, double, double) {
+	target->signal_drop().connect([&](const Glib::ValueBase& value, double, double) {
 		Glib::Value<GSList*> gslist_value;
 		gslist_value.init(value.gobj());
 		auto files = Glib::SListHandler<Glib::RefPtr<Gio::File>>::slist_to_vector(gslist_value.get(), Glib::OwnershipType::OWNERSHIP_NONE);
 		for (const auto& file_ptr : files) {
 			if (file_ptr) {
-				std::printf("File path: %s\n", file_ptr->get_path().c_str());
+				// TODO: Add logic for this
+				std::printf("Moving file: %s\n", file_ptr->get_path().c_str());
+				std::printf("To: %s\n", path.c_str());
 			}
 		}
 

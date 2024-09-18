@@ -86,13 +86,14 @@ frog::frog() {
 
 	flowbox_files.set_selection_mode(Gtk::SelectionMode::MULTIPLE);
 	auto target = Gtk::DropTarget::create(GDK_TYPE_FILE_LIST, Gdk::DragAction::MOVE);
-	target->signal_drop().connect([](const Glib::ValueBase& value, double, double) {
+	target->signal_drop().connect([&](const Glib::ValueBase& value, double, double) {
 		Glib::Value<GSList*> gslist_value;
 		gslist_value.init(value.gobj());
 		auto files = Glib::SListHandler<Glib::RefPtr<Gio::File>>::slist_to_vector(gslist_value.get(), Glib::OwnershipType::OWNERSHIP_NONE);
 		for (const auto& file_ptr : files) {
 			if (file_ptr) {
-				std::printf("File path: %s\n", file_ptr->get_path().c_str());
+				std::printf("Moving file: %s\n", file_ptr->get_path().c_str());
+				std::printf("To: %s\n", current_path.c_str());
 			}
 		}
 
