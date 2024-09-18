@@ -90,11 +90,19 @@ frog::frog() {
 		Glib::Value<GSList*> gslist_value;
 		gslist_value.init(value.gobj());
 		auto files = Glib::SListHandler<Glib::RefPtr<Gio::File>>::slist_to_vector(gslist_value.get(), Glib::OwnershipType::OWNERSHIP_NONE);
-		for (const auto& file_ptr : files) {
-			if (file_ptr) {
-				std::printf("Moving file: %s\n", file_ptr->get_path().c_str());
-				std::printf("To: %s\n", current_path.c_str());
+		for (const auto& file : files) {
+			Glib::RefPtr<Gio::File> destination = Gio::File::create_for_path(current_path + "/" + file->get_basename());
+
+			// TODO: Handle conflicts
+			if (destination->query_exists()) {
+				std::fprintf(stderr, "File already exists, Not moving file.\n");
+				continue;
 			}
+
+			// TODO: Check for permissions (Both source and dest)
+			std::printf("Moving file: %s\n", file->get_path().c_str());
+			std::printf("To: %s\n", current_path.c_str());
+			file->move(destination);
 		}
 
 		return true;
