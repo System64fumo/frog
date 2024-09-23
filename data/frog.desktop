@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Frog
+GenericName=File Manager
+Comment=Pay more respect to the earth.\nOtherwise, who knows? You might even get cursed. Heh heh.
+Icon=frog
+Exec=frog
+Categories=FileTools;FileManager;Utility;Core;
+StartupNotify=true
+MimeType=inode/directory;
