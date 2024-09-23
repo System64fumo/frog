@@ -7,6 +7,7 @@
 #include "icons.hpp"
 #include "disk.hpp"
 
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/separator.h>
 #include <gtkmm/droptarget.h>
 #include <gdkmm/clipboard.h>
@@ -46,11 +47,17 @@ frog::frog() {
 
 	box->append(flowbox_files);
 
+	auto event_controller_key = Gtk::EventControllerKey::create();
+	event_controller_key->signal_key_pressed().connect(
+		sigc::mem_fun(*this, &frog::on_key_press), true);
+	add_controller(event_controller_key);
+
 	Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
 	Glib::RefPtr<Gtk::GestureClick> right_click_gesture = Gtk::GestureClick::create();
 	click_gesture->set_button(GDK_BUTTON_PRIMARY);
 	right_click_gesture->set_button(GDK_BUTTON_SECONDARY);
 	click_gesture->signal_released().connect([&](const int &n_press, const double &x, const double &y) {
+		// TODO: This does not unfocus the path entry
 		// TODO: This still doesn't fully stop any active rename operations
 		auto children = flowbox_files.get_selected_children();
 		if (children.size() == 0)
@@ -69,6 +76,7 @@ frog::frog() {
 		popovermenu_context_menu.set_menu_model(menu_dir);
 		popovermenu_context_menu.popup();
 	});
+
 	scrolled_window_files.add_controller(click_gesture);
 	scrolled_window_files.add_controller(right_click_gesture);
 
@@ -199,6 +207,18 @@ void frog::sidebar_setup() {
 		}
 		disks.push_back(d);
 	}
+}
+
+bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::ModifierType &state) {
+	// TODO: Add auto navigation
+
+	if (keycode == 9) // Escape key
+		grab_focus(); // TODO: This does not work as intended
+
+	else if (keycode == 61) // Slash key
+		entry_path.grab_focus();
+
+	return false;
 }
 
 void frog::on_entry_done() {

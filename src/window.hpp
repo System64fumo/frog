@@ -68,6 +68,8 @@ class frog : public Gtk::Window {
 		void on_filebox_child_activated(Gtk::FlowBoxChild* child);
 		void on_places_child_activated(Gtk::FlowBoxChild* child);
 		void on_right_clicked(const int &n_press, const double &x, const double &y, Gtk::FlowBoxChild *flowbox_child);
+		bool on_key_press(const guint &keyval, const guint &keycode, const Gdk::ModifierType &state);
+
 		void navbar_setup();
 		void sidebar_setup();
 		void menu_file_setup();
