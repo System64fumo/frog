@@ -115,7 +115,7 @@ frog::frog() {
 
 		return true;
 	}, false);
-	flowbox_files.add_controller(target);
+	scrolled_window_files.add_controller(target);
 
 
 	//std::filesystem::current_path().string() // TODO: Add option to use this
