@@ -6,3 +6,4 @@
 
 inline Glib::RefPtr<Gtk::Application> app;
 inline frog* win;
+inline Glib::ustring start_path;
