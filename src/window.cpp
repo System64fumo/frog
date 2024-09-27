@@ -117,9 +117,15 @@ frog::frog() {
 	}, false);
 	scrolled_window_files.add_controller(target);
 
+	// Open in the home directory by default
+	if (start_path.empty())
+		start_path = getenv("HOME");
 
-	//std::filesystem::current_path().string() // TODO: Add option to use this
-	entry_path.set_text(getenv("HOME"));
+	// Open in the current directory as a fallback
+	if (start_path.empty())
+		start_path = std::filesystem::current_path().string();
+
+	entry_path.set_text(start_path);
 	on_entry_done();
 
 	// Load custom css
