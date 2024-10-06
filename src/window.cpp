@@ -7,6 +7,7 @@
 #include "icons.hpp"
 #include "disk.hpp"
 
+#include <gtk4-layer-shell.h>
 #include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/separator.h>
 #include <gtkmm/droptarget.h>
@@ -19,23 +20,43 @@ frog::frog() {
 	set_title("Frog");
 	set_default_size(800, 400);
 	set_child(box_main);
-	show();
 
-	navbar_setup();
 	get_xdg_user_dirs();
-	sidebar_setup();
+	load_icon_map();
 	menu_file_setup();
 	menu_dir_setup();
-	load_icon_map();
+
+	// Desktop mode
+	if (desktop_mode) {
+		get_style_context()->add_class("desktop");
+
+		gtk_layer_init_for_window(gobj());
+		gtk_layer_set_namespace(gobj(), "desk_frog");
+		gtk_layer_set_keyboard_mode(gobj(), GTK_LAYER_SHELL_KEYBOARD_MODE_ON_DEMAND);
+		gtk_layer_set_layer(gobj(), GTK_LAYER_SHELL_LAYER_BACKGROUND);
+
+		gtk_layer_set_anchor(gobj(), GTK_LAYER_SHELL_EDGE_LEFT, true);
+		gtk_layer_set_anchor(gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, true);
+		gtk_layer_set_anchor(gobj(), GTK_LAYER_SHELL_EDGE_TOP, true);
+		gtk_layer_set_anchor(gobj(), GTK_LAYER_SHELL_EDGE_BOTTOM, true);
+
+		start_path = (std::string)getenv("HOME") + "/Desktop";
+	}
+	else {
+		navbar_setup();
+		sidebar_setup();
+
+		box_container.append(entry_path);
+		entry_path.get_style_context()->add_class("path_bar");
+		entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_entry_done));
+	}
+
+	show();
 
 	box_main.append(box_container);
 	box_container.get_style_context()->add_class("file_container");
 	box_container.set_hexpand(true);
 	box_container.set_orientation(Gtk::Orientation::VERTICAL);
-
-	box_container.append(entry_path);
-	entry_path.get_style_context()->add_class("path_bar");
-	entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_entry_done));
 
 	// Somehow adding this box fixes critical errors when dragging to select several files/folders??
 	// It also seems to fix drag and drop in general..
@@ -250,7 +271,8 @@ void frog::on_filebox_child_activated(Gtk::FlowBoxChild* child) {
 	file_entry *entry = dynamic_cast<file_entry*>(child->get_child());
 	std::string path = entry_path.get_buffer()->get_text().raw();
 
-	if (entry->is_directory) {
+	// TODO: Can't open folders from desktop mode
+	if (entry->is_directory && !desktop_mode) {
 		std::string new_path = path + "/" + entry->label.get_text();
 		next_paths.clear();
 		navigate_to_dir(new_path);

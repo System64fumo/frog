@@ -1,4 +1,7 @@
 window {
+	background: transparent;
+}
+window:not(.desktop) {
 	background: @theme_bg_color;
 }
 
@@ -9,6 +12,9 @@ window {
 
 .file_container {
 	background: @theme_base_color;
+}
+.desktop .file_container {
+	background: transparent;
 }
 .file_container flowbox {
 	margin: 5px;

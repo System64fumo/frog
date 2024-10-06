@@ -1,5 +1,5 @@
 BINS = frog
-PKGS = gtkmm-4.0 blkid
+PKGS = gtkmm-4.0 gtk4-layer-shell-0 blkid
 SRCS +=	$(wildcard src/*.cpp)
 OBJS = $(SRCS:.cpp=.o)
 
