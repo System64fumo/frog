@@ -20,6 +20,14 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 		disk new_disk;
 		new_disk.name = disk_name;
 
+		// Check if the disk is removable
+		std::ifstream file("/sys/block/" + disk_name + "/removable");
+		std::string line;
+		if (file.is_open()) {
+			std::getline(file, line);
+			new_disk.removable = line == "1";
+		}
+
 		// Itterate over the disk's partitions
 		for (const auto& partition_entry : std::filesystem::directory_iterator(entry)) {
 			std::string partition_name = partition_entry.path().filename();

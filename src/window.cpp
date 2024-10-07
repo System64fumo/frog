@@ -215,17 +215,13 @@ void frog::sidebar_setup() {
 	disk_manager dm;
 	auto disks = dm.get_disks();
 	for (const auto& disk : disks) {
-		std::printf("Disk: %s\n", disk.name.c_str());
 		for (const auto& partition : disk.partitions) {
-			std::printf("  Partition: %s\n", partition.name.c_str());
-			std::printf("  Label: %s\n", partition.label.c_str());
-			std::printf("  Type: %s\n", partition.type.c_str());
-			if (!partition.mount_path.empty()) {
-				std::printf("  Mounted on: %s\n", partition.mount_path.c_str());
-				std::printf("  Used/Available: %s/%s\n", dm.to_human_readable(partition.used_bytes).c_str(), dm.to_human_readable(partition.total_bytes).c_str());
-			}
 			double used_percentage = (double)partition.used_bytes / (double)partition.total_bytes;
-			place *place_entry = Gtk::make_managed<place>(partition.label, partition.mount_path, "drive-harddisk-symbolic", used_percentage);
+			std::string icon = disk.removable ? "drive-removable-media-usb-symbolic" : "drive-harddisk-symbolic";
+			place *place_entry = Gtk::make_managed<place>(partition.label, partition.mount_path, icon, used_percentage);
+			if (!partition.mount_path.empty()) {
+				place_entry->set_tooltip_text(dm.to_human_readable(partition.used_bytes) + "/" + dm.to_human_readable(partition.total_bytes));
+			}
 			flowbox_places.append(*place_entry);
 		}
 	}
