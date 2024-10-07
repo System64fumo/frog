@@ -35,23 +35,6 @@ disk::disk(const std::filesystem::path& path) {
 	}
 }
 
-std::map<std::string, std::string> disk::get_mounts() {
-	std::map<std::string, std::string> mounted_partitions;
-	std::ifstream mounts("/proc/mounts");
-	std::string device, mount_point, rest;
-
-	while (mounts >> device >> mount_point) {
-		std::getline(mounts, rest); // Skip the rest of the line
-		const std::string prefix = "/dev/";
-		if (device.compare(0, prefix.size(), prefix) == 0)
-			device.erase(0, prefix.size());
-
-		mounted_partitions[device] = mount_point;
-	}
-
-	return mounted_partitions;
-}
-
 uint64_t disk::get_size(const std::string& path) {
 	std::ifstream size_file(path + "/size");
 	std::uint64_t sectors = 0;
@@ -91,6 +74,48 @@ std::string disk::to_human_readable(const uint64_t& bytes) {
 }
 
 void disk_manager::get_disks() {
+	std::map<std::string, std::string> mounts = get_mounts();
+
+	for (const auto& entry : std::filesystem::directory_iterator("/sys/block/")) {
+		std::string disk_name = entry.path().filename();
+
+		// Ignore non disks
+		if (disk_name.find("loop") != std::string::npos ||
+			disk_name.find("ram") != std::string::npos ||
+			disk_name.find("dm-") != std::string::npos)
+			continue;
+
+		std::printf("Disk: %s\n", disk_name.c_str());
+		for (const auto& partition_entry : std::filesystem::directory_iterator(entry)) {
+			std::string partition_name = partition_entry.path().filename();
+
+			// Filter out non partition dirs
+			if (partition_name.find(disk_name))
+				continue;
+
+			blkid_probe pr = blkid_new_probe_from_filename(("/dev/" + partition_name).c_str());
+			if (!pr)
+				continue;
+			blkid_probe_enable_partitions(pr, true);
+			blkid_probe_set_superblocks_flags(pr,
+				BLKID_SUBLKS_USAGE | BLKID_SUBLKS_TYPE |
+				BLKID_SUBLKS_MAGIC | BLKID_SUBLKS_LABEL);
+			blkid_do_fullprobe(pr);
+
+			const char* type = nullptr;
+			blkid_probe_lookup_value(pr, "TYPE", &type, nullptr);
+
+			std::printf("  Partition: %s\n", partition_name.c_str());
+			std::printf("  Type: %s\n", type);
+			std::printf("  Mounted on: %s\n", mounts[partition_name].c_str());
+
+			// Cleanup
+			blkid_free_probe(pr);
+		}
+	}
+}
+
+void disk_manager::get_disks_udisks() {
 	proxy = Gio::DBus::Proxy::create_sync(
 		Gio::DBus::Connection::get_sync(Gio::DBus::BusType::SYSTEM),
 		"org.freedesktop.UDisks2",
@@ -139,4 +164,21 @@ void disk_manager::extract_data(const Glib::VariantBase& variant_base) {
 				std::printf("Type: %s\n", type.c_str());
 			}
 	}
+}
+
+std::map<std::string, std::string> disk_manager::get_mounts() {
+	std::map<std::string, std::string> mounted_partitions;
+	std::ifstream mounts("/proc/mounts");
+	std::string device, mount_point, rest;
+
+	while (mounts >> device >> mount_point) {
+		std::getline(mounts, rest); // Skip the rest of the line
+		const std::string prefix = "/dev/";
+		if (device.compare(0, prefix.size(), prefix) == 0)
+			device.erase(0, prefix.size());
+
+		mounted_partitions[device] = mount_point;
+	}
+
+	return mounted_partitions;
 }
