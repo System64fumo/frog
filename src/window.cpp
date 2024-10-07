@@ -210,34 +210,25 @@ void frog::sidebar_setup() {
 	flowbox_places.append(*separator);
 	separator->get_parent()->set_sensitive(false);
 
-	// TODO: Remove all of this
-	/*std::map<std::string, std::string> mounts = disk::get_mounts();
-	std::vector<disk> disks;
-	for (const auto& entry : std::filesystem::directory_iterator("/sys/block/")) {
-		if (!entry.is_directory())
-			continue;
-
-		disk d(entry.path());
-		for (const disk::partition& partition : d.partitions) {
-			auto it = mounts.find(partition.name);
-			if (it != mounts.end()) {
-				std::string label = (!partition.label.empty()) ? partition.label : partition.name;
-				struct statvfs stats;
-				statvfs(it->second.c_str(), &stats);
-				unsigned long total_bytes = stats.f_blocks * stats.f_frsize;
-				unsigned long free_bytes = stats.f_bfree * stats.f_frsize;
-				unsigned long used_bytes = total_bytes - free_bytes;
-				double used = (double)used_bytes / (double)total_bytes;
-				place *place_entry = Gtk::make_managed<place>(label, it->second, "drive-harddisk-symbolic", used);
-				flowbox_places.append(*place_entry);
-			}
-		}
-		disks.push_back(d);
-	}*/
-
-	// Experimental
+	// TODO: Remove all of the verbose output
+	// And maybe consider adding tooltips to places
 	disk_manager dm;
-	dm.get_disks();
+	auto disks = dm.get_disks();
+	for (const auto& disk : disks) {
+		std::printf("Disk: %s\n", disk.name.c_str());
+		for (const auto& partition : disk.partitions) {
+			std::printf("  Partition: %s\n", partition.name.c_str());
+			std::printf("  Label: %s\n", partition.label.c_str());
+			std::printf("  Type: %s\n", partition.type.c_str());
+			if (!partition.mount_path.empty()) {
+				std::printf("  Mounted on: %s\n", partition.mount_path.c_str());
+				std::printf("  Used/Available: %s/%s\n", dm.to_human_readable(partition.used_bytes).c_str(), dm.to_human_readable(partition.total_bytes).c_str());
+			}
+			double used_percentage = (double)partition.used_bytes / (double)partition.total_bytes;
+			place *place_entry = Gtk::make_managed<place>(partition.label, partition.mount_path, "drive-harddisk-symbolic", used_percentage);
+			flowbox_places.append(*place_entry);
+		}
+	}
 }
 
 bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::ModifierType &state) {
