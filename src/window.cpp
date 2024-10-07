@@ -14,7 +14,6 @@
 #include <gdkmm/clipboard.h>
 #include <glibmm/bytes.h>
 #include <glibmm/vectorutils.h>
-#include <sys/statvfs.h>
 
 frog::frog() {
 	set_title("Frog");
