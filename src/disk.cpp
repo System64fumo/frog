@@ -1,48 +1,11 @@
 #include "disk.hpp"
 
 #include <blkid/blkid.h>
+#include <sys/statvfs.h>
 #include <fstream>
 
-disk::disk(const std::filesystem::path& path) {
-	device_name = path.filename().string();
-	//uint64_t disk_size = get_size(path.string());
-
-	for (const auto& entry : std::filesystem::directory_iterator(path)) {
-		if (entry.is_directory()) {
-			partition part;
-			part.name = entry.path().filename().string();
-
-			// Get the partition size
-			if (part.name.find(device_name) == 0) {
-				std::string part_path = "/dev/" + part.name;
-				blkid_probe pr = blkid_new_probe_from_filename(part_path.c_str());
-				blkid_probe_enable_partitions(pr, true);
-				blkid_probe_set_superblocks_flags(pr,
-					BLKID_SUBLKS_USAGE | BLKID_SUBLKS_TYPE |
-					BLKID_SUBLKS_MAGIC | BLKID_SUBLKS_LABEL);
-
-				blkid_do_fullprobe(pr);
-				const char* label = nullptr;
-				blkid_probe_lookup_value(pr, "LABEL", &label, nullptr);
-				if (label)
-					part.label = label;
-				part.size = get_size(entry.path().string());
-				blkid_free_probe(pr);
-			}
-
-			partitions.push_back(part);
-		}
-	}
-}
-
-uint64_t disk::get_size(const std::string& path) {
-	std::ifstream size_file(path + "/size");
-	std::uint64_t sectors = 0;
-	size_file >> sectors;
-	return sectors * 512;
-}
-
-std::string disk::to_human_readable(const uint64_t& bytes) {
+// TODO: This shouldn't be here
+std::string to_human_readable(const uint64_t& bytes) {
 	const uint64_t KB = 1024;
 	const uint64_t MB = KB * 1024;
 	const uint64_t GB = MB * 1024;
@@ -75,6 +38,7 @@ std::string disk::to_human_readable(const uint64_t& bytes) {
 
 void disk_manager::get_disks() {
 	std::map<std::string, std::string> mounts = get_mounts();
+	std::vector<disk> disks;
 
 	for (const auto& entry : std::filesystem::directory_iterator("/sys/block/")) {
 		std::string disk_name = entry.path().filename();
@@ -86,6 +50,9 @@ void disk_manager::get_disks() {
 			continue;
 
 		std::printf("Disk: %s\n", disk_name.c_str());
+		disk new_disk;
+
+		// Itterate over the disk's partitions
 		for (const auto& partition_entry : std::filesystem::directory_iterator(entry)) {
 			std::string partition_name = partition_entry.path().filename();
 
@@ -93,24 +60,47 @@ void disk_manager::get_disks() {
 			if (partition_name.find(disk_name))
 				continue;
 
-			blkid_probe pr = blkid_new_probe_from_filename(("/dev/" + partition_name).c_str());
+			partition new_partition;
+			new_partition.name = partition_name;
+			new_partition.mount_path = mounts[new_partition.name];
+
+			blkid_probe pr = blkid_new_probe_from_filename(("/dev/" + new_partition.name).c_str());
 			if (!pr)
 				continue;
+
 			blkid_probe_enable_partitions(pr, true);
-			blkid_probe_set_superblocks_flags(pr,
-				BLKID_SUBLKS_USAGE | BLKID_SUBLKS_TYPE |
-				BLKID_SUBLKS_MAGIC | BLKID_SUBLKS_LABEL);
+			blkid_probe_set_superblocks_flags(pr, BLKID_SUBLKS_TYPE | BLKID_SUBLKS_LABEL);
 			blkid_do_fullprobe(pr);
 
-			const char* type = nullptr;
-			blkid_probe_lookup_value(pr, "TYPE", &type, nullptr);
+			const char* pl = nullptr;
+			blkid_probe_lookup_value(pr, "LABEL", &pl, nullptr);
+			new_partition.label = (pl != nullptr) ? std::string(pl) : "Unlabeled Disk";
 
-			std::printf("  Partition: %s\n", partition_name.c_str());
-			std::printf("  Type: %s\n", type);
-			std::printf("  Mounted on: %s\n", mounts[partition_name].c_str());
+			const char* pt = nullptr;
+			blkid_probe_lookup_value(pr, "TYPE", &pt, nullptr);
+			new_partition.type = (pt != nullptr) ? std::string(pt) : "Unknown Type";
 
 			// Cleanup
 			blkid_free_probe(pr);
+
+			bool mounted = !new_partition.mount_path.empty();
+			if (mounted) {
+				struct statvfs stats;
+				statvfs(mounts[new_partition.name].c_str(), &stats);
+				new_partition.total_bytes = stats.f_blocks * stats.f_frsize;
+				new_partition.free_bytes = stats.f_bfree * stats.f_frsize;
+				new_partition.used_bytes = new_partition.total_bytes - new_partition.free_bytes;
+			}
+
+			std::printf("  Partition: %s\n", new_partition.name.c_str());
+			std::printf("  Label: %s\n", new_partition.label.c_str());
+			std::printf("  Type: %s\n", new_partition.type.c_str());
+			if (mounted) {
+				std::printf("  Mounted on: %s\n", new_partition.mount_path.c_str());
+				std::printf("  Used/Available: %s/%s\n", to_human_readable(new_partition.used_bytes).c_str(), to_human_readable(new_partition.total_bytes).c_str());
+			}
+
+			disks.push_back(new_disk);
 		}
 	}
 }
