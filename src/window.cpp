@@ -234,6 +234,10 @@ void frog::sidebar_setup() {
 		}
 		disks.push_back(d);
 	}
+
+	// Experimental UDisks backend
+	//disk_manager dm;
+	//dm.get_disks();
 }
 
 bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::ModifierType &state) {

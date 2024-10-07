@@ -89,3 +89,54 @@ std::string disk::to_human_readable(const uint64_t& bytes) {
 
 	return oss.str();
 }
+
+void disk_manager::get_disks() {
+	proxy = Gio::DBus::Proxy::create_sync(
+		Gio::DBus::Connection::get_sync(Gio::DBus::BusType::SYSTEM),
+		"org.freedesktop.UDisks2",
+		"/org/freedesktop/UDisks2",
+		"org.freedesktop.DBus.ObjectManager");
+
+	std::vector<Glib::VariantBase> args_vector;
+	auto args = Glib::VariantContainerBase::create_tuple(args_vector);
+	auto result = proxy->call_sync("GetManagedObjects", args);
+	auto result_cb = Glib::VariantBase::cast_dynamic<Glib::VariantContainerBase>(result);
+	auto result_base = result_cb.get_child(0);
+	extract_data(result_base);
+}
+
+void disk_manager::extract_data(const Glib::VariantBase& variant_base) {
+	auto variant = Glib::VariantBase::cast_dynamic<Glib::Variant<std::map<Glib::DBusObjectPathString, std::map<Glib::ustring, std::map<Glib::ustring, Glib::VariantBase>>>>>(variant_base);
+	auto data_map = variant.get();
+
+	for (const auto& [object_path, interface_map] : data_map) {
+		std::string device_path;
+		std::string mount_path;
+		std::string type;
+
+		for (const auto& [interface_name, property_map] : interface_map) {
+				if (interface_name == "org.freedesktop.UDisks2.Block") {
+					for (const auto& [property_name, value] : property_map) {
+						if (property_name == "Device")
+							device_path = value.print();
+						else if (property_name == "IdType")
+							type = value.print();
+					}
+				}
+
+				if (interface_name == "org.freedesktop.UDisks2.Filesystem") {
+					for (const auto& [property_name, value] : property_map) {
+						if (property_name == "MountPoints")
+							mount_path = value.print();
+					}
+				}
+			}
+
+			// Filter out unmountable devices
+			if (!device_path.empty() && type != "''") {
+				std::printf("Device: %s\n", device_path.c_str());
+				std::printf("Mounted on: %s\n", mount_path.c_str());
+				std::printf("Type: %s\n", type.c_str());
+			}
+	}
+}

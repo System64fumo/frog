@@ -5,6 +5,9 @@
 #include <filesystem>
 #include <map>
 
+#include <giomm/dbusconnection.h>
+#include <giomm/dbusproxy.h>
+
 class disk {
 	public:
 		disk(const std::filesystem::path& path);
@@ -24,5 +27,14 @@ class disk {
 	private:
 		std::string to_human_readable(const uint64_t& bytes);
 		uint64_t get_size(const std::string& path);
-		std::vector<disk> get_disks();
+};
+
+class disk_manager {
+	public:
+		void get_disks();
+
+	private:
+		Glib::RefPtr<Gio::DBus::Proxy> proxy;
+
+		void extract_data(const Glib::VariantBase& variant_base);
 };
