@@ -4,39 +4,7 @@
 #include <sys/statvfs.h>
 #include <fstream>
 
-// TODO: This shouldn't be here
-std::string to_human_readable(const uint64_t& bytes) {
-	const uint64_t KB = 1024;
-	const uint64_t MB = KB * 1024;
-	const uint64_t GB = MB * 1024;
-	const uint64_t TB = GB * 1024;
-
-	double value = static_cast<double>(bytes);
-	std::string unit;
-
-	if (bytes >= TB) {
-		value /= TB;
-		unit = "TB";
-	} else if (bytes >= GB) {
-		value /= GB;
-		unit = "GB";
-	} else if (bytes >= MB) {
-		value /= MB;
-		unit = "MB";
-	} else if (bytes >= KB) {
-		value /= KB;
-		unit = "KB";
-	} else {
-		unit = "B";
-	}
-
-	std::ostringstream oss;
-	oss << std::fixed << std::setprecision(2) << value << " " << unit;
-
-	return oss.str();
-}
-
-void disk_manager::get_disks() {
+std::vector<disk_manager::disk> disk_manager::get_disks() {
 	std::map<std::string, std::string> mounts = get_mounts();
 	std::vector<disk> disks;
 
@@ -49,8 +17,8 @@ void disk_manager::get_disks() {
 			disk_name.find("dm-") != std::string::npos)
 			continue;
 
-		std::printf("Disk: %s\n", disk_name.c_str());
 		disk new_disk;
+		new_disk.name = disk_name;
 
 		// Itterate over the disk's partitions
 		for (const auto& partition_entry : std::filesystem::directory_iterator(entry)) {
@@ -84,6 +52,9 @@ void disk_manager::get_disks() {
 			blkid_free_probe(pr);
 
 			bool mounted = !new_partition.mount_path.empty();
+			new_partition.used_bytes = 0;
+			new_partition.free_bytes = 0;
+			new_partition.used_bytes = 0;
 			if (mounted) {
 				struct statvfs stats;
 				statvfs(mounts[new_partition.name].c_str(), &stats);
@@ -92,17 +63,11 @@ void disk_manager::get_disks() {
 				new_partition.used_bytes = new_partition.total_bytes - new_partition.free_bytes;
 			}
 
-			std::printf("  Partition: %s\n", new_partition.name.c_str());
-			std::printf("  Label: %s\n", new_partition.label.c_str());
-			std::printf("  Type: %s\n", new_partition.type.c_str());
-			if (mounted) {
-				std::printf("  Mounted on: %s\n", new_partition.mount_path.c_str());
-				std::printf("  Used/Available: %s/%s\n", to_human_readable(new_partition.used_bytes).c_str(), to_human_readable(new_partition.total_bytes).c_str());
-			}
-
-			disks.push_back(new_disk);
+			new_disk.partitions.push_back(new_partition);
 		}
+		disks.push_back(new_disk);
 	}
+	return disks;
 }
 
 void disk_manager::get_disks_udisks() {
@@ -171,4 +136,35 @@ std::map<std::string, std::string> disk_manager::get_mounts() {
 	}
 
 	return mounted_partitions;
+}
+
+std::string disk_manager::to_human_readable(const uint64_t& bytes) {
+	const uint64_t KB = 1024;
+	const uint64_t MB = KB * 1024;
+	const uint64_t GB = MB * 1024;
+	const uint64_t TB = GB * 1024;
+
+	double value = static_cast<double>(bytes);
+	std::string unit;
+
+	if (bytes >= TB) {
+		value /= TB;
+		unit = "TB";
+	} else if (bytes >= GB) {
+		value /= GB;
+		unit = "GB";
+	} else if (bytes >= MB) {
+		value /= MB;
+		unit = "MB";
+	} else if (bytes >= KB) {
+		value /= KB;
+		unit = "KB";
+	} else {
+		unit = "B";
+	}
+
+	std::ostringstream oss;
+	oss << std::fixed << std::setprecision(2) << value << " " << unit;
+
+	return oss.str();
 }

@@ -21,12 +21,13 @@ class disk_manager {
 		};
 
 		struct disk {
-			std::string device;
+			std::string name;
 			std::vector<partition> partitions;
 		};
 
-		void get_disks();
+		std::vector<disk> get_disks();
 		void get_disks_udisks();
+		static std::string to_human_readable(const uint64_t& bytes);
 
 	private:
 		Glib::RefPtr<Gio::DBus::Proxy> proxy;
