@@ -20,5 +20,6 @@ class file_entry : public Gtk::Box {
 		int file_size;
 		std::string file_icon;
 
+		void load_thumbnail(const std::string& extension);
 		void setup_drop_target();
 };

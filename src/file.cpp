@@ -111,6 +111,24 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 
 	image.set(icon);
 	source->set_icon(icon, icon_size / 2, icon_size / 2);
+	load_thumbnail(extension);
+}
+
+void file_entry::load_thumbnail(const std::string& extension) {
+	// TODO: Load this in another thread
+	// TODO: SVGS look terrible
+	// TODO: Add video support
+	// TODO: Maybe consider animated gifs?
+	if (icon_from_extension[extension].find("image") != std::string::npos) {
+		auto pixbuf = Gdk::Pixbuf::create_from_file(path);
+		int img_width = pixbuf->get_width();
+		int img_height = pixbuf->get_height();
+		double scale = std::min(static_cast<double>(icon_size) / img_width, static_cast<double>(icon_size) / img_height);
+		int new_width = static_cast<int>(img_width * scale);
+		int new_height = static_cast<int>(img_height * scale);
+		pixbuf = pixbuf->scale_simple(new_width, new_height, Gdk::InterpType::BILINEAR);
+		image.set(pixbuf);
+	}
 }
 
 void file_entry::setup_drop_target() {
