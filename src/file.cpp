@@ -23,6 +23,11 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	image.set_pixel_size(icon_size);
 	image.set_from_icon_name("content-loading-symbolic");
 
+	// TODO: Add option to show/hide hidden files
+	// TODO: Add option to enable/disable shadowing of hidden files
+	if (file_name[0] == '.')
+		image.set_opacity(0.75);
+
 	append(label);
 	label.set_text(file_name);
 	label.set_halign(Gtk::Align::CENTER);
@@ -93,7 +98,9 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	else {
 		size_t last_dot_pos = file_name.rfind('.');
 		if (last_dot_pos != std::string::npos) {
-			std::string extension = file_name.substr(last_dot_pos + 1);
+			extension = file_name.substr(last_dot_pos + 1);
+			std::transform(extension.begin(), extension.end(), extension.begin(),
+				[](unsigned char c) { return std::tolower(c); });
 			std::string extension_icon = icon_from_extension[extension];
 			if (!extension_icon.empty())
 				file_icon = icon_from_extension[extension];

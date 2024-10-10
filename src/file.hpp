@@ -19,6 +19,7 @@ class file_entry : public Gtk::Box {
 		std::string file_name;
 		int file_size;
 		std::string file_icon;
+		std::string extension;
 
 		void load_thumbnail();
 		Glib::RefPtr<Gdk::Pixbuf> resize_thumbnail(Glib::RefPtr<Gdk::Pixbuf> pixbuf);
