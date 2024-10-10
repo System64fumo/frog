@@ -10,6 +10,9 @@
 #include <giomm/file.h>
 #include <gtkmm/icontheme.h>
 #include <glibmm/vectorutils.h>
+#include <glibmm/convert.h>
+#include <gstreamer-1.0/gst/gst.h>
+#include <gst/video/video-info.h>
 
 file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	path = entry.path();
@@ -111,24 +114,75 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 
 	image.set(icon);
 	source->set_icon(icon, icon_size / 2, icon_size / 2);
-	load_thumbnail(extension);
+	load_thumbnail();
 }
 
-void file_entry::load_thumbnail(const std::string& extension) {
+void file_entry::load_thumbnail() {
 	// TODO: Load this in another thread
 	// TODO: SVGS look terrible
 	// TODO: Add video support
 	// TODO: Maybe consider animated gifs?
+	Glib::RefPtr<Gdk::Pixbuf> pixbuf;
 	if (icon_from_extension[extension].find("image") != std::string::npos) {
-		auto pixbuf = Gdk::Pixbuf::create_from_file(path);
-		int img_width = pixbuf->get_width();
-		int img_height = pixbuf->get_height();
-		double scale = std::min(static_cast<double>(icon_size) / img_width, static_cast<double>(icon_size) / img_height);
-		int new_width = static_cast<int>(img_width * scale);
-		int new_height = static_cast<int>(img_height * scale);
-		pixbuf = pixbuf->scale_simple(new_width, new_height, Gdk::InterpType::BILINEAR);
-		image.set(pixbuf);
+		pixbuf = Gdk::Pixbuf::create_from_file(path);
 	}
+	else if (icon_from_extension[extension].find("video") != std::string::npos && false) { // Temporarily disabled because it's buggy
+		GstElement* pipeline;
+		GstSample* sample = nullptr;
+		GError* error = nullptr;
+
+		gst_init(nullptr, nullptr);
+
+		std::string pipeline_str = "uridecodebin uri=" +  Glib::filename_to_uri(path) + " ! videoconvert ! appsink name=sink caps=video/x-raw,format=RGB";
+
+		pipeline = gst_parse_launch(pipeline_str.c_str(), &error);
+		GstElement* sink = gst_bin_get_by_name(GST_BIN(pipeline), "sink");
+
+		g_object_set(sink, "max-buffers", 1, "drop", true, nullptr);
+		GstStateChangeReturn ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);
+		if (ret == GST_STATE_CHANGE_FAILURE)
+			return;
+
+		g_signal_emit_by_name(sink, "pull-sample", &sample);
+		if (!sample)
+			return;
+
+		GstMapInfo map;
+		GstBuffer* buffer = gst_sample_get_buffer(sample);
+		if (!gst_buffer_map(buffer, &map, GST_MAP_READ))
+			return;
+
+		gst_element_send_event(pipeline, gst_event_new_eos());
+
+		GstVideoInfo info;
+		GstCaps* caps = gst_sample_get_caps(sample);
+		if (gst_video_info_from_caps(&info, caps)) {
+			GdkPixbuf* gdk_pixbuf = gdk_pixbuf_new_from_data(
+				map.data, GDK_COLORSPACE_RGB, false, 8,
+				info.width, info.height, info.stride[0],
+				nullptr, nullptr
+			);
+
+			gst_buffer_unmap(buffer, &map);
+
+			gst_sample_unref(sample);
+			pixbuf = Glib::wrap(gdk_pixbuf);
+		}
+		gst_object_unref(pipeline);
+	}
+	else
+		return;
+
+	image.set(resize_thumbnail(pixbuf));
+}
+
+Glib::RefPtr<Gdk::Pixbuf> file_entry::resize_thumbnail(Glib::RefPtr<Gdk::Pixbuf> pixbuf) {
+	int img_width = pixbuf->get_width();
+	int img_height = pixbuf->get_height();
+	double scale = std::min(static_cast<double>(icon_size) / img_width, static_cast<double>(icon_size) / img_height);
+	int new_width = static_cast<int>(img_width * scale);
+	int new_height = static_cast<int>(img_height * scale);
+	return pixbuf->scale_simple(new_width, new_height, Gdk::InterpType::BILINEAR);
 }
 
 void file_entry::setup_drop_target() {
