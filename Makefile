@@ -1,5 +1,5 @@
 BINS = frog
-PKGS = gtkmm-4.0 gtk4-layer-shell-0 blkid libudev
+PKGS = gtkmm-4.0 gtk4-layer-shell-0 blkid libudev gstreamer-1.0 gstreamer-video-1.0
 SRCS +=	$(wildcard src/*.cpp)
 OBJS = $(SRCS:.cpp=.o)
 
