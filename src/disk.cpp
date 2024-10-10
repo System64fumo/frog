@@ -2,6 +2,7 @@
 
 #include <blkid/blkid.h>
 #include <sys/statvfs.h>
+#include <libudev.h>
 #include <fstream>
 
 std::vector<disk_manager::disk> disk_manager::get_disks() {
@@ -21,12 +22,42 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 		new_disk.name = disk_name;
 
 		// Check if the disk is removable
-		std::ifstream file("/sys/block/" + disk_name + "/removable");
+		std::ifstream file("/sys/block/" + new_disk.name + "/removable");
 		std::string line;
 		if (file.is_open()) {
 			std::getline(file, line);
 			new_disk.removable = line == "1";
 		}
+
+		// Get disk model
+		// TODO: This could be cached and used less often
+		// This could also be simplified
+		new_disk.model = "Unknown model";
+		struct udev *udev = udev_new();
+		struct udev_enumerate *enumerate = udev_enumerate_new(udev);
+		udev_enumerate_add_match_subsystem(enumerate, "block");
+		udev_enumerate_scan_devices(enumerate);
+		struct udev_list_entry *devices = udev_enumerate_get_list_entry(enumerate);
+
+		// Iterate through devices
+		for (struct udev_list_entry *dev_list_entry = devices; dev_list_entry; 
+		dev_list_entry = udev_list_entry_get_next(dev_list_entry)) {
+
+			const char *path = udev_list_entry_get_name(dev_list_entry);
+			std::string p = path;
+
+			if (p.substr(p.size() - new_disk.name.size()) != new_disk.name)
+				continue;
+
+			struct udev_device *dev = udev_device_new_from_syspath(udev, path);
+
+			const char *model = udev_device_get_property_value(dev, "ID_MODEL");
+			new_disk.model = model;
+			udev_device_unref(dev);
+		}
+
+		udev_enumerate_unref(enumerate);
+		udev_unref(udev);
 
 		// Itterate over the disk's partitions
 		for (const auto& partition_entry : std::filesystem::directory_iterator(entry)) {
@@ -50,7 +81,7 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 
 			const char* pl = nullptr;
 			blkid_probe_lookup_value(pr, "LABEL", &pl, nullptr);
-			new_partition.label = (pl != nullptr) ? std::string(pl) : "Unlabeled Disk";
+			new_partition.label = (pl != nullptr) ? std::string(pl) : new_disk.model;
 
 			const char* pt = nullptr;
 			blkid_probe_lookup_value(pr, "TYPE", &pt, nullptr);

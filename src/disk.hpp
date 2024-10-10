@@ -22,6 +22,7 @@ class disk_manager {
 
 		struct disk {
 			std::string name;
+			std::string model;
 			bool removable;
 			std::vector<partition> partitions;
 		};
