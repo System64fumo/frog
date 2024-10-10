@@ -57,7 +57,7 @@ void load_icon_map() {
 	icon_from_extension["txt"] = "text-plain";
 	icon_from_extension["wav"] = "audio-wav";
 	icon_from_extension["weba"] = "audio-webm";
-	icon_from_extension["webm"] = "audio-webm";
+	icon_from_extension["webm"] = "video-webm";
 	icon_from_extension["webp"] = "image-webp";
 	icon_from_extension["xhtml"] = "application-xhtml+xml";
 	icon_from_extension["xml"] = "application-xml";
