@@ -13,6 +13,7 @@
 #include <glibmm/convert.h>
 #include <gstreamer-1.0/gst/gst.h>
 #include <gst/video/video-info.h>
+#include <thread>
 
 file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	path = entry.path();
@@ -121,15 +122,18 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 
 	image.set(icon);
 	source->set_icon(icon, icon_size / 2, icon_size / 2);
-	load_thumbnail();
+
+	// This is terrible
+	// I would have used a dispatcher for this but that errors out.
+	// So if there's any problems in the future this would be the line responsible for that
+	// TODO: Loading thumbnails should happen only after loading every file in the current directory
+	// There should also be a limit to how many thumbnails could be loaded at once
+	std::thread(&file_entry::load_thumbnail, this).detach();
 }
 
 void file_entry::load_thumbnail() {
-	// TODO: Load this in another thread
 	// TODO: SVGS look terrible
-	// TODO: Add video support
 	// TODO: Maybe consider animated gifs?
-	Glib::RefPtr<Gdk::Pixbuf> pixbuf;
 	if (icon_from_extension[extension].find("image") != std::string::npos) {
 		pixbuf = Gdk::Pixbuf::create_from_file(path);
 	}

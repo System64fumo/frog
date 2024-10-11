@@ -15,6 +15,8 @@ class file_entry : public Gtk::Box {
 		Gtk::EditableLabel label;
 
 	private:
+		Glib::RefPtr<Gdk::Pixbuf> pixbuf;
+
 		int icon_size = 64;
 		std::string file_name;
 		int file_size;
