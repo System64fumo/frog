@@ -106,6 +106,28 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 		}
 		disks.push_back(new_disk);
 	}
+
+	// Scan for network mounts
+	// TODO: Scan fstab for mount entries
+	for (const auto& entry : mounts) {
+		if (entry.first.find(":/") != std::string::npos) {
+			disk new_disk;
+			new_disk.removable = false;
+			new_disk.name = "Network disk";
+			partition new_partition;
+			new_partition.mount_path = entry.second.c_str();
+			new_partition.label = entry.second.substr(entry.second.rfind('/') + 1);
+
+			struct statvfs stats;
+			statvfs(entry.second.c_str(), &stats);
+			new_partition.total_bytes = stats.f_blocks * stats.f_frsize;
+			new_partition.free_bytes = stats.f_bfree * stats.f_frsize;
+			new_partition.used_bytes = new_partition.total_bytes - new_partition.free_bytes;
+			new_disk.partitions.push_back(new_partition);
+			disks.push_back(new_disk);
+		}
+	}
+
 	return disks;
 }
 
