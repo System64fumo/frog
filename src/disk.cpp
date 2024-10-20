@@ -6,6 +6,7 @@
 #include <fstream>
 
 std::vector<disk_manager::disk> disk_manager::get_disks() {
+	auto fstab = get_fstab();
 	std::map<std::string, std::string> mounts = get_mounts();
 	std::vector<disk> disks;
 
@@ -70,6 +71,10 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 			partition new_partition;
 			new_partition.name = partition_name;
 			new_partition.mount_path = mounts[new_partition.name];
+			new_partition.should_show = true;
+			if (fstab.find(partition_name) != fstab.end()) {
+				new_partition.should_show = (fstab[partition_name][3].find("x-gvfs-show") != std::string::npos);
+			}
 
 			blkid_probe pr = blkid_new_probe_from_filename(("/dev/" + new_partition.name).c_str());
 			if (!pr)
@@ -108,7 +113,6 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 	}
 
 	// Scan for network mounts
-	// TODO: Scan fstab for mount entries
 	for (const auto& entry : mounts) {
 		if (entry.first.find(":/") != std::string::npos) {
 			disk new_disk;
@@ -180,6 +184,33 @@ void disk_manager::extract_data(const Glib::VariantBase& variant_base) {
 				std::printf("Type: %s\n", type.c_str());
 			}
 	}
+}
+
+std::map<std::string, std::vector<std::string>> disk_manager::get_fstab() {
+	std::ifstream fstab("/etc/fstab");
+
+	std::string line;
+	std::map<std::string, std::vector<std::string>> fstab_map;
+
+	while (std::getline(fstab, line)) {
+		if (line.empty() || line[0] == '#')
+			continue;
+
+		std::istringstream stream(line);
+		std::string token;
+
+		std::vector<std::string> fstab_entry;
+		while (stream >> token) {
+			if (token.rfind("/dev/", 0) == 0)
+				token = token.substr(5);
+			fstab_entry.push_back(token);
+		}
+
+		fstab_map[fstab_entry[0]] = fstab_entry;
+	}
+
+	fstab.close();
+	return fstab_map;
 }
 
 std::map<std::string, std::string> disk_manager::get_mounts() {

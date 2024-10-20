@@ -18,6 +18,7 @@ class disk_manager {
 			unsigned long total_bytes;
 			unsigned long free_bytes;
 			unsigned long used_bytes;
+			bool should_show;
 		};
 
 		struct disk {
@@ -34,6 +35,7 @@ class disk_manager {
 	private:
 		Glib::RefPtr<Gio::DBus::Proxy> proxy;
 
+		std::map<std::string, std::vector<std::string>> get_fstab();
 		std::map<std::string, std::string> get_mounts();
 		void extract_data(const Glib::VariantBase& variant_base);
 };
