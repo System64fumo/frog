@@ -216,6 +216,9 @@ void frog::sidebar_setup() {
 	auto disks = dm.get_disks();
 	for (const auto& disk : disks) {
 		for (const auto& partition : disk.partitions) {
+			if (!partition.should_show)
+				continue;
+
 			double used_percentage = (double)partition.used_bytes / (double)partition.total_bytes;
 			std::string icon = disk.removable ? "drive-removable-media-usb-symbolic" : "drive-harddisk-symbolic";
 			place *place_entry = Gtk::make_managed<place>(partition.label, partition.mount_path, icon, used_percentage);
