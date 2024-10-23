@@ -90,6 +90,7 @@ void frog::menu_dir_setup() {
 	menu_dir->append_section(section2);
 	menu_dir->append_section(section3);
 
+	// TODO: Make all actions async
 	section1->append("Create New Folder", "dir.newdir");
 	action_group->add_action("newdir", [&](){
 		std::string path = current_path + "/New Folder";
@@ -162,7 +163,24 @@ void frog::menu_dir_setup() {
 				for (const auto& path : file_paths) {
 					if (operation == "copy") {
 						std::printf("Copying: %s to %s\n", path.string().c_str(), current_path.c_str());
-						std::filesystem::copy_file(path, current_path / path.filename(), std::filesystem::copy_options::overwrite_existing);
+
+						std::string desired_name = current_path +  "/" + path.filename().string();
+						size_t dot_pos = desired_name.find_last_of('.');
+						std::string name = desired_name.substr(0, dot_pos);
+						std::string extension = desired_name.substr(dot_pos);
+						int suffix = 0;
+				
+						while (std::filesystem::exists(desired_name)) {
+							suffix++;
+							desired_name = name + "-" + std::to_string(suffix) + extension;
+						}
+
+						std::ofstream file(desired_name);
+						if (!file) {
+							std::fprintf(stderr, "Failed to create a new file\n");
+						}
+
+						std::filesystem::copy_file(path, desired_name, std::filesystem::copy_options::overwrite_existing);
 					}
 					else if (operation == "cut") {
 						// TODO: Run an optional validation check here to ensure the file was copied properly
