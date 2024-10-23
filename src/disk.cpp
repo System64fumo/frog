@@ -119,6 +119,15 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 			new_disk.removable = false;
 			new_disk.name = "Network disk";
 			partition new_partition;
+
+			size_t pos = entry.first.find(':');
+
+			new_partition.name = entry.first.substr(0, pos);
+			new_partition.should_show = true;
+			if (fstab.find(new_partition.name) != fstab.end()) {
+				new_partition.should_show = (fstab[new_partition.name][3].find("x-gvfs-show") != std::string::npos);
+			}
+
 			new_partition.mount_path = entry.second.c_str();
 			new_partition.label = entry.second.substr(entry.second.rfind('/') + 1);
 
