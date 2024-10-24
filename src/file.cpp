@@ -36,6 +36,7 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	auto ulabel = dynamic_cast<Gtk::Label*>(stack->get_children()[0]);
 	auto text = dynamic_cast<Gtk::Text*>(stack->get_children()[1]);
 	stack->set_hhomogeneous(false);
+	ulabel->set_lines(2);
 	ulabel->set_justify(Gtk::Justification::CENTER);
 	ulabel->set_ellipsize(Pango::EllipsizeMode::END);
 	ulabel->set_max_width_chars(10);

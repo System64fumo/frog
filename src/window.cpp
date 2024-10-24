@@ -162,27 +162,36 @@ void frog::navbar_setup() {
 	button_previous.get_style_context()->add_class("flat");
 	button_previous.set_icon_name("go-previous-symbolic");
 	button_previous.set_sensitive(false);
+	button_previous.set_focusable(false);
 	button_previous.signal_clicked().connect(sigc::mem_fun(*this, &frog::navigate_hist_previous));
 
 	box_navigation.append(button_next);
 	button_next.get_style_context()->add_class("flat");
 	button_next.set_icon_name("go-next-symbolic");
 	button_next.set_sensitive(false);
+	button_next.set_focusable(false);
 	button_next.signal_clicked().connect(sigc::mem_fun(*this, &frog::navigate_hist_forward));
 
 	box_navigation.append(button_up);
 	button_up.get_style_context()->add_class("flat");
 	button_up.set_icon_name("go-up-symbolic");
 	button_up.set_sensitive(true);
+	button_up.set_focusable(false);
 	button_up.signal_clicked().connect(sigc::mem_fun(*this, &frog::navigate_up_dir));
 
-	//box_navigation.append(button_search);
-	//button_search.get_style_context()->add_class("flat");
-	//button_search.set_icon_name("search-symbolic");
+	// TODO Enable this eventually
+	/*box_navigation.append(button_search);
+	button_search.get_style_context()->add_class("flat");
+	button_search.set_icon_name("search-symbolic");
+	button_search.set_focusable(false);*/
 }
 
 void frog::sidebar_setup() {
-	box_main.append(box_sidebar);
+	box_main.append(revealer_sidebar);
+	revealer_sidebar.set_child(box_sidebar);
+	revealer_sidebar.set_reveal_child(true);
+	revealer_sidebar.set_transition_type(Gtk::RevealerTransitionType::SLIDE_LEFT);
+
 	box_sidebar.set_size_request(175, -1);
 	box_sidebar.set_orientation(Gtk::Orientation::VERTICAL);
 	box_sidebar.append(box_navigation);
@@ -359,4 +368,14 @@ void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
 	widget_queue.push(fbox_child);
 
 	f_entry->get_style_context()->add_class("file_entry");
+}
+
+void frog::snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>& snapshot) {
+	// TODO: This is terrible
+	// This updates wayy too frequently
+
+	revealer_sidebar.set_reveal_child(get_width() > 480);
+
+	// Render normally
+	Gtk::Window::snapshot_vfunc(snapshot);
 }
