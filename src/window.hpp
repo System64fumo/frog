@@ -4,6 +4,7 @@
 #include <gtkmm/button.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/flowbox.h>
+#include <gtkmm/revealer.h>
 #include <glibmm/dispatcher.h>
 #include <gtkmm/popovermenu.h>
 #include <gtkmm/entry.h>
@@ -38,6 +39,7 @@ class frog : public Gtk::Window {
 		directory_watcher *watcher = nullptr;
 
 		Gtk::Box box_main;
+		Gtk::Revealer revealer_sidebar;
 		Gtk::Box box_sidebar;
 		Gtk::Box box_container;
 
@@ -81,4 +83,6 @@ class frog : public Gtk::Window {
 		void navigate_up_dir();
 		void navigate_to_dir(const std::string &path);
 
+	protected:
+		void snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>&);
 };
