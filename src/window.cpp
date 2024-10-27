@@ -18,7 +18,8 @@
 frog::frog() {
 	set_title("Frog");
 	set_default_size(800, 400);
-	set_child(box_main);
+	set_child(overlay_main);
+	overlay_main.set_child(box_main);
 
 	get_xdg_user_dirs();
 	load_icon_map();
@@ -45,23 +46,34 @@ frog::frog() {
 		navbar_setup();
 		sidebar_setup();
 
-		box_container.append(entry_path);
+		box_top.append(button_expand);
+		button_expand.get_style_context()->add_class("flat");
+		button_expand.set_icon_name("sidebar-expand");
+		button_expand.set_focusable(false);
+		button_expand.signal_clicked().connect([&]() {
+			sidebar_should_hide = false;
+			revealer_sidebar.set_reveal_child(true);
+			box_overlay.set_visible(true);
+		});
+
+		box_top.append(entry_path);
 		entry_path.get_style_context()->add_class("path_bar");
 		entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_entry_done));
+		entry_path.set_hexpand(true);
 	}
 
 	show();
 
-	box_main.append(box_container);
-	box_container.get_style_context()->add_class("file_container");
-	box_container.set_hexpand(true);
-	box_container.set_orientation(Gtk::Orientation::VERTICAL);
+	box_main.append(box_top);
+	box_main.get_style_context()->add_class("file_container");
+	box_main.set_hexpand(true);
+	box_main.set_orientation(Gtk::Orientation::VERTICAL);
 
 	// Somehow adding this box fixes critical errors when dragging to select several files/folders??
 	// It also seems to fix drag and drop in general..
 	// Why.. How..
 	Gtk::Box *box = Gtk::make_managed<Gtk::Box>();
-	box_container.append(scrolled_window_files);
+	box_main.append(scrolled_window_files);
 	scrolled_window_files.set_child(*box);
 	scrolled_window_files.set_vexpand(true);
 
@@ -187,10 +199,27 @@ void frog::navbar_setup() {
 }
 
 void frog::sidebar_setup() {
-	box_main.append(revealer_sidebar);
+	overlay_main.add_overlay(box_overlay);
+	box_overlay.get_style_context()->add_class("box_overlay");
+	box_overlay.set_visible(false);
+	Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
+	click_gesture->set_button(GDK_BUTTON_PRIMARY);
+	click_gesture->signal_pressed().connect([&](
+		const int& n_press,
+		const double& x,
+		const double& y) {
+			sidebar_should_hide = true;
+			revealer_sidebar.set_reveal_child(false);
+			box_overlay.set_visible(false);
+	});
+	box_overlay.add_controller(click_gesture);
+
+	overlay_main.add_overlay(revealer_sidebar);
+	revealer_sidebar.get_style_context()->add_class("revealer_sidebar");
 	revealer_sidebar.set_child(box_sidebar);
 	revealer_sidebar.set_reveal_child(true);
-	revealer_sidebar.set_transition_type(Gtk::RevealerTransitionType::SLIDE_LEFT);
+	revealer_sidebar.set_transition_type(Gtk::RevealerTransitionType::SLIDE_RIGHT);
+	revealer_sidebar.set_halign(Gtk::Align::START);
 
 	box_sidebar.set_size_request(175, -1);
 	box_sidebar.set_orientation(Gtk::Orientation::VERTICAL);
@@ -373,9 +402,22 @@ void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
 void frog::snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>& snapshot) {
 	// TODO: This is terrible
 	// This updates wayy too frequently
-
-	revealer_sidebar.set_reveal_child(get_width() > 480);
-
+	if (get_width() > 480) { // Desktop UI
+		revealer_sidebar.set_reveal_child(true);
+		box_main.set_margin_start(175);
+		button_expand.set_visible(false);
+		box_overlay.set_visible(false);
+		sidebar_should_hide = true;
+		revealer_sidebar.get_style_context()->remove_class("mobile");
+	}
+	else { // Mobile UI
+		if (sidebar_should_hide) {
+			revealer_sidebar.set_reveal_child(false);
+			box_main.set_margin_start(0);
+			button_expand.set_visible(true);
+		}
+		revealer_sidebar.get_style_context()->add_class("mobile");
+	}
 	// Render normally
 	Gtk::Window::snapshot_vfunc(snapshot);
 }
