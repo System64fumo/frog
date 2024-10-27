@@ -27,6 +27,12 @@ window:not(.desktop) {
 	margin: 5px;
 }
 
+.revealer_sidebar {
+}
+.revealer_sidebar.mobile {
+	background: alpha(@theme_base_color, 0.9);
+}
+
 .sidebar {
 	background: transparent;
 	border-right: 1px solid @borders;
@@ -54,4 +60,8 @@ editablelabel.editing text {
 
 editablelabel.editing selection {
 	background: @theme_selected_bg_color;
+}
+
+.box_overlay {
+	background: rgba(0, 0, 0, 0.25);
 }

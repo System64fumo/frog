@@ -7,6 +7,7 @@
 #include <gtkmm/revealer.h>
 #include <glibmm/dispatcher.h>
 #include <gtkmm/popovermenu.h>
+#include <gtkmm/overlay.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/gestureclick.h>
 #include <giomm/menu.h>
@@ -35,19 +36,23 @@ class frog : public Gtk::Window {
 		std::future<void> async_task;
 		std::queue<Gtk::FlowBoxChild*> widget_queue;
 		std::mutex queue_mutex;
+		bool sidebar_should_hide = true;
 
 		directory_watcher *watcher = nullptr;
 
+		Gtk::Overlay overlay_main;
+		Gtk::Box box_overlay;
 		Gtk::Box box_main;
 		Gtk::Revealer revealer_sidebar;
 		Gtk::Box box_sidebar;
-		Gtk::Box box_container;
+		Gtk::Box box_top;
 
 		Gtk::Box box_navigation;
 		Gtk::Button button_previous;
 		Gtk::Button button_next;
 		Gtk::Button button_up;
 		Gtk::Button button_search;
+		Gtk::Button button_expand;
 
 		Gtk::ScrolledWindow scrolled_window_places;
 		Gtk::FlowBox flowbox_places;
