@@ -1,16 +1,18 @@
 BINS = frog
 PKGS = gtkmm-4.0 gtk4-layer-shell-0 blkid libudev gstreamer-1.0 gstreamer-video-1.0
 SRCS +=	$(wildcard src/*.cpp)
-OBJS = $(SRCS:.cpp=.o)
+OBJS = $(patsubst src/%,$(BUILDDIR)/%,$(SRCS:.cpp=.o))
 
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
-SHAREDIR ?= $(PREFIX)/share
+DATADIR ?= $(PREFIX)/share
+BUILDDIR = build
 
 CXXFLAGS += -Oz -s -Wall -flto -std=c++20
 CXXFLAGS += $(shell pkg-config --cflags $(PKGS))
 LDFLAGS += $(shell pkg-config --libs $(PKGS)) -Wl,--gc-sections
 
+$(shell mkdir -p $(BUILDDIR))
 JOB_COUNT := $(BINS) $(OBJS)
 JOBS_DONE := $(shell ls -l $(JOB_COUNT) 2> /dev/null | wc -l)
 
@@ -21,21 +23,22 @@ endef
 
 $(BINS): $(OBJS)
 	$(call progress, Linking $@)
-	@$(CXX) -o $(BINS) $(OBJS) \
+	@$(CXX) -o \
+	$(BUILDDIR)/$(BINS) \
+	$(OBJS) \
 	$(LDFLAGS) \
 	$(CXXFLAGS)
 
-%.o: %.cpp
+$(BUILDDIR)/%.o: src/%.cpp
 	$(call progress, Compiling $@)
-	@$(CXX) $(CFLAGS) -c $< -o $@ \
-	$(CXXFLAGS)
+	@$(CXX) -c $< -o $@ $(CXXFLAGS)
 
 install: $(BINS)
 	@echo "Installing..."
-	@install -D -t $(DESTDIR)$(BINDIR) $(BINS)
-	@install -D -t $(DESTDIR)$(SHAREDIR)/applications data/frog.desktop
-	@install -D -t $(DESTDIR)$(SHAREDIR)/pixmaps data/frog.png
+	@install -D -t $(DESTDIR)$(BINDIR) $(BUILDDIR)/$(BINS)
+	@install -D -t $(DESTDIR)$(DATADIR)/applications data/frog.desktop
+	@install -D -t $(DESTDIR)$(DATADIR)/pixmaps data/frog.png
 
 clean:
 	@echo "Cleaning up"
-	@rm $(BINS) $(SRCS:.cpp=.o)
+	@rm -r $(BUILDDIR)
