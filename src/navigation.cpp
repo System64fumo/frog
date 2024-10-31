@@ -1,5 +1,8 @@
 #include "window.hpp"
 #include "place.hpp"
+#include "file.hpp"
+
+#include <gtkmm/adjustment.h>
 
 void frog::navigate_hist_previous() {
 	std::string new_path = back_paths.back();
@@ -43,9 +46,26 @@ void frog::navigate_to_dir(const std::string &path) {
 	if (path_str == current_path)
 		return;
 
-	if (!std::filesystem::exists(path_str)) {
+	std::filesystem::directory_entry entry(path_str);
+
+	if (!entry.exists()) {
 		entry_path.set_text(current_path);
 		return;
+	}
+	// TODO: This should also work for non current directory files
+	else if (!entry.is_directory()) {
+		for (auto* child : flowbox_files.get_children()) {
+			auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
+			auto* custom_widget = dynamic_cast<file_entry*>(fbox_child->get_child());
+
+			if (custom_widget->path == path_str) {
+				flowbox_files.select_child(*fbox_child);
+				auto vadjustment = scrolled_window_files.get_vadjustment();
+				vadjustment->set_value(fbox_child->get_allocation().get_y());
+				entry_path.set_text(current_path);
+				return;
+			}
+		}
 	}
 
 	back_paths.push_back(current_path);

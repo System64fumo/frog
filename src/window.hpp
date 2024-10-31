@@ -21,6 +21,7 @@
 
 #include "dir_watcher.hpp"
 #include "xdg_dirs.hpp"
+#include "file.hpp"
 
 class frog : public Gtk::Window {
 	public:
