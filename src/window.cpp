@@ -278,7 +278,6 @@ bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::Mo
 
 	// Escape key
 	if (keycode == 9) {
-		// TODO: This does not work as intended
 		button_dummy.grab_focus();
 		entry_path.set_text(current_path);
 	}
@@ -305,6 +304,7 @@ bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::Mo
 void frog::on_entry_done() {
 	navigate_to_dir(entry_path.get_buffer()->get_text().raw());
 	entry_path.set_position(entry_path.get_text_length());
+	button_dummy.grab_focus();
 }
 
 void frog::on_entry_changed() {
@@ -437,21 +437,28 @@ void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
 
 void frog::snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>& snapshot) {
 	Glib::signal_idle().connect([this, snapshot]() {
-		// TODO: This is terrible
-		// This updates wayy too frequently
+		// TODO: This could be better
 		if (get_width() > 480) { // Desktop UI
+			if (!revealer_sidebar.get_style_context()->has_class("mobile"))
+				return false;
+
 			revealer_sidebar.set_reveal_child(true);
 			box_main.set_margin_start(175);
 			button_expand.set_visible(false);
 			box_overlay.set_visible(false);
 			sidebar_should_hide = true;
 			revealer_sidebar.get_style_context()->remove_class("mobile");
+			button_dummy.grab_focus();
 		}
 		else { // Mobile UI
+			if (revealer_sidebar.get_style_context()->has_class("mobile"))
+				return false;
+
 			if (sidebar_should_hide) {
 				revealer_sidebar.set_reveal_child(false);
 				box_main.set_margin_start(0);
 				button_expand.set_visible(true);
+				button_dummy.grab_focus();
 			}
 			revealer_sidebar.get_style_context()->add_class("mobile");
 		}
