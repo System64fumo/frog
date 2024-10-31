@@ -59,6 +59,7 @@ frog::frog() {
 		box_top.append(entry_path);
 		entry_path.get_style_context()->add_class("path_bar");
 		entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_entry_done));
+		entry_path.signal_changed().connect(sigc::mem_fun(*this, &frog::on_entry_changed));
 		entry_path.set_hexpand(true);
 	}
 
@@ -303,6 +304,20 @@ bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::Mo
 
 void frog::on_entry_done() {
 	navigate_to_dir(entry_path.get_buffer()->get_text().raw());
+	entry_path.set_position(entry_path.get_text_length());
+}
+
+void frog::on_entry_changed() {
+	// TODO: This is not perfect
+	std::filesystem::directory_entry entry(entry_path.get_text().c_str());
+	bool exists = entry.exists();
+	bool is_dir = entry.is_directory();
+	bool ends_with_slash = (entry_path.get_text()[entry_path.get_text_length() - 1] == '/');
+	bool is_root = entry_path.get_text() == "/";
+
+	if (exists && is_dir && (!ends_with_slash || is_root)) {
+		generate_entry_autocomplete(entry_path.get_text());
+	}
 }
 
 int frog::sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2) {
