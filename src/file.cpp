@@ -40,6 +40,7 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	ulabel->set_justify(Gtk::Justification::CENTER);
 	ulabel->set_ellipsize(Pango::EllipsizeMode::END);
 	ulabel->set_max_width_chars(10);
+	ulabel->set_wrap_mode(Pango::WrapMode::WORD_CHAR);
 	text->set_propagate_text_width(true);
 	text->set_max_width_chars(10);
 

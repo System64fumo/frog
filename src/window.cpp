@@ -79,6 +79,10 @@ frog::frog() {
 
 	box->append(flowbox_files);
 
+	box_main.append(button_dummy);
+	button_dummy.grab_focus();
+	button_dummy.set_visible(false);
+
 	auto event_controller_key = Gtk::EventControllerKey::create();
 	event_controller_key->signal_key_pressed().connect(
 		sigc::mem_fun(*this, &frog::on_key_press), true);
@@ -274,7 +278,7 @@ bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::Mo
 	// Escape key
 	if (keycode == 9) {
 		// TODO: This does not work as intended
-		flowbox_places.grab_focus();
+		button_dummy.grab_focus();
 		entry_path.set_text(current_path);
 	}
 
@@ -401,7 +405,7 @@ void frog::on_dispatcher_file_change() {
 
 void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
 	Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
-	fbox_child->set_size_request(96,96);
+	fbox_child->set_size_request(96,110);
 	file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
 	fbox_child->set_child(*f_entry);
 	fbox_child->set_focusable(false); // Fixes focus issue when renaming
@@ -417,24 +421,28 @@ void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
 }
 
 void frog::snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>& snapshot) {
-	// TODO: This is terrible
-	// This updates wayy too frequently
-	if (get_width() > 480) { // Desktop UI
-		revealer_sidebar.set_reveal_child(true);
-		box_main.set_margin_start(175);
-		button_expand.set_visible(false);
-		box_overlay.set_visible(false);
-		sidebar_should_hide = true;
-		revealer_sidebar.get_style_context()->remove_class("mobile");
-	}
-	else { // Mobile UI
-		if (sidebar_should_hide) {
-			revealer_sidebar.set_reveal_child(false);
-			box_main.set_margin_start(0);
-			button_expand.set_visible(true);
+	Glib::signal_idle().connect([this, snapshot]() {
+		// TODO: This is terrible
+		// This updates wayy too frequently
+		if (get_width() > 480) { // Desktop UI
+			revealer_sidebar.set_reveal_child(true);
+			box_main.set_margin_start(175);
+			button_expand.set_visible(false);
+			box_overlay.set_visible(false);
+			sidebar_should_hide = true;
+			revealer_sidebar.get_style_context()->remove_class("mobile");
 		}
-		revealer_sidebar.get_style_context()->add_class("mobile");
-	}
+		else { // Mobile UI
+			if (sidebar_should_hide) {
+				revealer_sidebar.set_reveal_child(false);
+				box_main.set_margin_start(0);
+				button_expand.set_visible(true);
+			}
+			revealer_sidebar.get_style_context()->add_class("mobile");
+		}
+		return false;
+	});
+
 	// Render normally
 	Gtk::Window::snapshot_vfunc(snapshot);
 }
