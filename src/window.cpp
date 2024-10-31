@@ -271,11 +271,28 @@ void frog::sidebar_setup() {
 bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::ModifierType &state) {
 	// TODO: Add auto navigation
 
-	if (keycode == 9) // Escape key
-		grab_focus(); // TODO: This does not work as intended
+	// Escape key
+	if (keycode == 9) {
+		// TODO: This does not work as intended
+		flowbox_places.grab_focus();
+		entry_path.set_text(current_path);
+	}
 
-	else if (keycode == 61) // Slash key
+	// Slash key
+	else if (keycode == 61) {
 		entry_path.grab_focus();
+		entry_path.set_text("/");
+		entry_path.set_position(1);
+	}
+
+	// Other printable characters
+	else if (g_unichar_isprint(gdk_keyval_to_unicode(keyval))) {
+		entry_path.set_text(entry_path.get_text() + "/" + gdk_keyval_to_unicode(keyval));
+		entry_path.grab_focus();
+		entry_path.set_position(entry_path.get_text_length());
+		return true;
+	}
+
 
 	return false;
 }
