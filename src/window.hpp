@@ -63,6 +63,7 @@ class frog : public Gtk::Window {
 		Glib::Dispatcher dispatcher_files;
 		Glib::Dispatcher dispatcher_file_change;
 		std::vector<Gtk::FlowBoxChild*> file_widgets;
+		Gtk::Button button_dummy;
 
 		Glib::RefPtr<Gio::Menu> menu_file;
 		Glib::RefPtr<Gio::Menu> menu_dir;
