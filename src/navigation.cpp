@@ -68,9 +68,11 @@ void frog::navigate_to_dir(const std::string &path) {
 
 	stop_flag.store(false);
 	async_task = std::async(std::launch::async, [this, path]() {
+		generate_entry_autocomplete(path);
 		for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(path)) {
 			if (stop_flag.load())
 				break;
+
 			create_file_entry(entry);
 			dispatcher_files.emit();
 		}
@@ -104,4 +106,16 @@ void frog::navigate_to_dir(const std::string &path) {
 
 	if (!path_found)
 		flowbox_places.unselect_all();
+}
+
+void frog::generate_entry_autocomplete(const std::string& path) {
+	entry_completion = Gtk::EntryCompletion::create();
+	completion_model = Gtk::ListStore::create(columns);
+	entry_completion->set_model(completion_model);
+	entry_completion->set_text_column(columns.name);
+	entry_path.set_completion(entry_completion);
+	for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(path)) {
+		auto row = *(completion_model->append());
+		row[columns.name] = entry.path().string();
+	}
 }

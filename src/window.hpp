@@ -9,6 +9,7 @@
 #include <gtkmm/popovermenu.h>
 #include <gtkmm/overlay.h>
 #include <gtkmm/entry.h>
+#include <gtkmm/liststore.h>
 #include <gtkmm/gestureclick.h>
 #include <giomm/menu.h>
 #include <giomm/simpleactiongroup.h>
@@ -58,6 +59,14 @@ class frog : public Gtk::Window {
 		Gtk::FlowBox flowbox_places;
 
 		Gtk::Entry entry_path;
+		Glib::RefPtr<Gtk::EntryCompletion> entry_completion;
+		Glib::RefPtr<Gtk::ListStore> completion_model;
+		struct ModelColumns : public Gtk::TreeModel::ColumnRecord {
+			ModelColumns() { add(name); }
+			Gtk::TreeModelColumn<Glib::ustring> name;
+		};
+		ModelColumns columns;
+
 		Gtk::ScrolledWindow scrolled_window_files;
 		Gtk::FlowBox flowbox_files;
 		Glib::Dispatcher dispatcher_files;
@@ -70,6 +79,9 @@ class frog : public Gtk::Window {
 		Gtk::PopoverMenu popovermenu_context_menu;
 
 		void on_entry_done();
+		void on_entry_changed();
+		void generate_entry_autocomplete(const std::string& path);
+
 		int sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2);
 		void on_dispatcher_files();
 		void on_dispatcher_file_change();
