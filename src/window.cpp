@@ -60,6 +60,8 @@ frog::frog() {
 		entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_entry_done));
 		entry_path.signal_changed().connect(sigc::mem_fun(*this, &frog::on_entry_changed));
 		entry_path.set_hexpand(true);
+
+		switch_layout();
 	}
 
 	show();
@@ -122,7 +124,6 @@ frog::frog() {
 	flowbox_files.signal_child_activated().connect(sigc::mem_fun(*this, &frog::on_filebox_child_activated));
 	flowbox_files.set_sort_func(sigc::mem_fun(*this, &frog::sort_func));
 	flowbox_files.set_activate_on_single_click(false);
-	flowbox_files.set_valign(Gtk::Align::START);
 	flowbox_files.set_homogeneous(true);
 	flowbox_files.set_max_children_per_line(128);
 	flowbox_files.set_row_spacing(30);
@@ -423,6 +424,7 @@ void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
 	file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
 	fbox_child->set_child(*f_entry);
 	fbox_child->set_focusable(false); // Fixes focus issue when renaming
+	fbox_child->set_valign(Gtk::Align::START);
 
 	Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
 	click_gesture->set_button(GDK_BUTTON_SECONDARY);
@@ -435,35 +437,39 @@ void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
 }
 
 void frog::snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>& snapshot) {
-	Glib::signal_idle().connect([this, snapshot]() {
-		// TODO: This could be better
-		if (get_width() > 480) { // Desktop UI
-			if (!revealer_sidebar.get_style_context()->has_class("mobile"))
-				return false;
-
-			revealer_sidebar.set_reveal_child(true);
-			box_main.set_margin_start(175);
-			button_expand.set_visible(false);
-			box_overlay.set_visible(false);
-			sidebar_should_hide = true;
-			revealer_sidebar.get_style_context()->remove_class("mobile");
-			button_dummy.grab_focus();
-		}
-		else { // Mobile UI
-			if (revealer_sidebar.get_style_context()->has_class("mobile"))
-				return false;
-
-			if (sidebar_should_hide) {
-				revealer_sidebar.set_reveal_child(false);
-				box_main.set_margin_start(0);
-				button_expand.set_visible(true);
-				button_dummy.grab_focus();
-			}
-			revealer_sidebar.get_style_context()->add_class("mobile");
-		}
-		return false;
+	Glib::signal_idle().connect([this]() {
+		switch_layout();
+		return true;
 	});
 
 	// Render normally
 	Gtk::Window::snapshot_vfunc(snapshot);
+}
+
+void frog::switch_layout() {
+	// TODO: This could be better
+	if (get_width() > 480) { // Desktop UI
+		if (!revealer_sidebar.get_style_context()->has_class("mobile"))
+			return;
+
+		revealer_sidebar.set_reveal_child(true);
+		box_main.set_margin_start(175);
+		button_expand.set_visible(false);
+		box_overlay.set_visible(false);
+		sidebar_should_hide = true;
+		revealer_sidebar.get_style_context()->remove_class("mobile");
+		button_dummy.grab_focus();
+	}
+	else { // Mobile UI
+		if (revealer_sidebar.get_style_context()->has_class("mobile"))
+			return;
+
+		if (sidebar_should_hide) {
+			revealer_sidebar.set_reveal_child(false);
+			box_main.set_margin_start(0);
+			button_expand.set_visible(true);
+			button_dummy.grab_focus();
+		}
+		revealer_sidebar.get_style_context()->add_class("mobile");
+	}
 }
