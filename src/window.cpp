@@ -124,6 +124,7 @@ frog::frog() {
 	flowbox_files.signal_child_activated().connect(sigc::mem_fun(*this, &frog::on_filebox_child_activated));
 	flowbox_files.set_sort_func(sigc::mem_fun(*this, &frog::sort_func));
 	flowbox_files.set_activate_on_single_click(false);
+	flowbox_files.set_valign(Gtk::Align::START); // TODO: Undo this eventually
 	flowbox_files.set_homogeneous(true);
 	flowbox_files.set_max_children_per_line(128);
 	flowbox_files.set_row_spacing(30);
