@@ -126,6 +126,12 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 	source->set_icon(icon, icon_size / 2, icon_size / 2);
 }
 
+file_entry::~file_entry() {
+	// TODO: Cleanup is still not perfect
+	pixbuf.reset();
+	image.clear();
+}
+
 void file_entry::load_thumbnail() {
 	// TODO: SVGS look terrible
 	// TODO: Maybe consider animated gifs?
@@ -185,15 +191,17 @@ void file_entry::load_thumbnail() {
 	else
 		return;
 
-	image.set(resize_thumbnail(pixbuf));
+	pixbuf = resize_thumbnail(pixbuf);
+	image.set(pixbuf);
+	pixbuf.reset();
 }
 
-Glib::RefPtr<Gdk::Pixbuf> file_entry::resize_thumbnail(Glib::RefPtr<Gdk::Pixbuf> pixbuf) {
-	int img_width = pixbuf->get_width();
-	int img_height = pixbuf->get_height();
-	double scale = std::min(static_cast<double>(icon_size) / img_width, static_cast<double>(icon_size) / img_height);
-	int new_width = static_cast<int>(img_width * scale);
-	int new_height = static_cast<int>(img_height * scale);
+Glib::RefPtr<Gdk::Pixbuf> file_entry::resize_thumbnail(const Glib::RefPtr<Gdk::Pixbuf>& pixbuf) {
+	const int img_width = pixbuf->get_width();
+	const int img_height = pixbuf->get_height();
+	const double scale = std::min(static_cast<double>(icon_size) / img_width, static_cast<double>(icon_size) / img_height);
+	const int new_width = static_cast<int>(img_width * scale);
+	const int new_height = static_cast<int>(img_height * scale);
 	return pixbuf->scale_simple(new_width, new_height, Gdk::InterpType::BILINEAR);
 }
 
