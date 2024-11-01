@@ -362,9 +362,16 @@ void frog::on_places_child_activated(Gtk::FlowBoxChild *child) {
 
 void frog::on_dispatcher_files() {
 	while (!widget_queue.empty()) {
-		auto widget = widget_queue.front();
+		auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(widget_queue.front());
+		auto f_entry = dynamic_cast<file_entry*>(fbox_child->get_child());
 		widget_queue.pop();
-		flowbox_files.append(*widget);
+		flowbox_files.append(*fbox_child);
+
+		// Start loading thumbnail
+		// TODO: Set limit to how many thumbnails can be loaded at a time
+		std::thread([f_entry]() {
+			f_entry->load_thumbnail();
+		}).detach();
 	}
 }
 

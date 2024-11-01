@@ -14,6 +14,8 @@ class file_entry : public Gtk::Box {
 		Gtk::Image image;
 		Gtk::EditableLabel label;
 
+		void load_thumbnail();
+
 	private:
 		Glib::RefPtr<Gdk::Pixbuf> pixbuf;
 
@@ -23,7 +25,6 @@ class file_entry : public Gtk::Box {
 		std::string file_icon;
 		std::string extension;
 
-		void load_thumbnail();
 		Glib::RefPtr<Gdk::Pixbuf> resize_thumbnail(Glib::RefPtr<Gdk::Pixbuf> pixbuf);
 		void setup_drop_target();
 };
