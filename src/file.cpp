@@ -124,13 +124,6 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 
 	image.set(icon);
 	source->set_icon(icon, icon_size / 2, icon_size / 2);
-
-	// This is terrible
-	// I would have used a dispatcher for this but that errors out.
-	// So if there's any problems in the future this would be the line responsible for that
-	// TODO: Loading thumbnails should happen only after loading every file in the current directory
-	// There should also be a limit to how many thumbnails could be loaded at once
-	std::thread(&file_entry::load_thumbnail, this).detach();
 }
 
 void file_entry::load_thumbnail() {
