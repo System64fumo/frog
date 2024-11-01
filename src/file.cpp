@@ -130,7 +130,13 @@ void file_entry::load_thumbnail() {
 	// TODO: SVGS look terrible
 	// TODO: Maybe consider animated gifs?
 	if (icon_from_extension[extension].find("image") != std::string::npos) {
-		pixbuf = Gdk::Pixbuf::create_from_file(path);
+		try {
+			pixbuf = Gdk::Pixbuf::create_from_file(path);
+		}
+		catch (const Gdk::PixbufError& e) {
+			std::fprintf(stderr, "Unable to generate a thumbnail for file: %s\n", path.c_str());
+			return;
+		}
 	}
 	else if (icon_from_extension[extension].find("video") != std::string::npos && false) { // Temporarily disabled because it's buggy
 		GstElement* pipeline;
