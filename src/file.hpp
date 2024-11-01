@@ -8,6 +8,7 @@
 class file_entry : public Gtk::Box {
 	public:
 		file_entry(const std::filesystem::directory_entry &entry);
+		~file_entry();
 
 		std::string path;
 		bool is_directory;
@@ -19,12 +20,12 @@ class file_entry : public Gtk::Box {
 	private:
 		Glib::RefPtr<Gdk::Pixbuf> pixbuf;
 
-		int icon_size = 64;
+		const int icon_size = 64;
 		std::string file_name;
 		int file_size;
 		std::string file_icon;
 		std::string extension;
 
-		Glib::RefPtr<Gdk::Pixbuf> resize_thumbnail(Glib::RefPtr<Gdk::Pixbuf> pixbuf);
+		Glib::RefPtr<Gdk::Pixbuf> resize_thumbnail(const Glib::RefPtr<Gdk::Pixbuf>&);
 		void setup_drop_target();
 };
