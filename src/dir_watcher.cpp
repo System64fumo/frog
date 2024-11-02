@@ -2,7 +2,6 @@
 
 #include <sys/inotify.h>
 #include <sys/eventfd.h>
-#include <unistd.h>
 #include <cstring>
 
 directory_watcher::directory_watcher(Glib::Dispatcher *dispatcher) :  stop_thread(false), inotify_fd(-1), event_fd(-1) {

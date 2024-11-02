@@ -124,12 +124,17 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) {
 
 	image.set(icon);
 	source->set_icon(icon, icon_size / 2, icon_size / 2);
+
+	// TODO: Don't run this in another thread..
+	// It will cause a memory leak..
+	load_thumbnail();
 }
 
 file_entry::~file_entry() {
 	// TODO: Cleanup is still not perfect
 	pixbuf.reset();
 	image.clear();
+	pixbuf = nullptr;
 }
 
 void file_entry::load_thumbnail() {
@@ -141,6 +146,8 @@ void file_entry::load_thumbnail() {
 		}
 		catch (const Gdk::PixbufError& e) {
 			std::fprintf(stderr, "Unable to generate a thumbnail for file: %s\n", path.c_str());
+			pixbuf.reset();
+			pixbuf = nullptr;
 			return;
 		}
 	}
@@ -191,17 +198,17 @@ void file_entry::load_thumbnail() {
 	else
 		return;
 
-	pixbuf = resize_thumbnail(pixbuf);
-	image.set(pixbuf);
+	image.set(resize_thumbnail(pixbuf));
 	pixbuf.reset();
+	pixbuf = nullptr;
 }
 
 Glib::RefPtr<Gdk::Pixbuf> file_entry::resize_thumbnail(const Glib::RefPtr<Gdk::Pixbuf>& pixbuf) {
 	const int img_width = pixbuf->get_width();
 	const int img_height = pixbuf->get_height();
-	const double scale = std::min(static_cast<double>(icon_size) / img_width, static_cast<double>(icon_size) / img_height);
-	const int new_width = static_cast<int>(img_width * scale);
-	const int new_height = static_cast<int>(img_height * scale);
+	const double scale = std::min((double)icon_size / img_width, (double)icon_size / img_height);
+	const int new_width = (int)(img_width * scale);
+	const int new_height = (int)(img_height * scale);
 	return pixbuf->scale_simple(new_width, new_height, Gdk::InterpType::BILINEAR);
 }
 
