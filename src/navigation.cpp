@@ -5,8 +5,7 @@
 #include <gtkmm/adjustment.h>
 
 void frog::navigate_hist_previous() {
-	std::string new_path = back_paths.back();
-	navigate_to_dir(new_path);
+	navigate_to_dir(back_paths.back());
 	next_paths.push_back(back_paths.back());
 	back_paths.pop_back();
 	back_paths.pop_back();
@@ -15,21 +14,16 @@ void frog::navigate_hist_previous() {
 }
 
 void frog::navigate_hist_forward() {
-	std::string new_path = next_paths.back();
+	navigate_to_dir(next_paths.back());
 	next_paths.pop_back();
-	navigate_to_dir(new_path);
 	button_next.set_sensitive(next_paths.size() != 0);
 }
 
 void frog::navigate_up_dir() {
-	std::filesystem::path path = current_path;
-	std::filesystem::path parent_path = path.parent_path();
-	navigate_to_dir(parent_path.string());
+	navigate_to_dir(current_path.parent_path());
 }
 
-void frog::navigate_to_dir(const std::string &path) {
-	std::filesystem::path fs_path = path;
-
+void frog::navigate_to_dir(std::filesystem::path fs_path) {
 	if (fs_path.filename() == ".") {
 		fs_path = fs_path.parent_path();
 		entry_path.set_text(fs_path.string());
@@ -49,7 +43,7 @@ void frog::navigate_to_dir(const std::string &path) {
 	std::filesystem::directory_entry entry(path_str);
 
 	if (!entry.exists()) {
-		entry_path.set_text(current_path);
+		entry_path.set_text(current_path.string());
 		return;
 	}
 	// TODO: This should also work for non current directory files
@@ -62,7 +56,7 @@ void frog::navigate_to_dir(const std::string &path) {
 				flowbox_files.select_child(*fbox_child);
 				auto vadjustment = scrolled_window_files.get_vadjustment();
 				vadjustment->set_value(fbox_child->get_allocation().get_y());
-				entry_path.set_text(current_path);
+				entry_path.set_text(current_path.string());
 				return;
 			}
 		}
@@ -73,7 +67,7 @@ void frog::navigate_to_dir(const std::string &path) {
 	button_previous.set_sensitive(back_paths.size() != 1);
 	button_next.set_sensitive(next_paths.size() != 0);
 
-	entry_path.set_text(current_path);
+	entry_path.set_text(current_path.string());
 
 	if (async_task.valid()) {
 		stop_flag.store(true);
@@ -87,9 +81,9 @@ void frog::navigate_to_dir(const std::string &path) {
 	flowbox_files.remove_all();
 
 	stop_flag.store(false);
-	async_task = std::async(std::launch::async, [this, path]() {
-		generate_entry_autocomplete(path);
-		for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(path)) {
+	async_task = std::async(std::launch::async, [this, fs_path]() {
+		generate_entry_autocomplete(fs_path.string());
+		for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(fs_path)) {
 			if (stop_flag.load())
 				break;
 

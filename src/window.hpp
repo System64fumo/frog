@@ -30,9 +30,9 @@ class frog : public Gtk::Window {
 	private:
 		// TODO: This is starting to get rather long here.
 		// Consider moving some parts of this to separate files.
-		std::string current_path;
-		std::vector<std::string> back_paths;
-		std::vector<std::string> next_paths;
+		std::filesystem::path current_path;
+		std::vector<std::filesystem::path> back_paths;
+		std::vector<std::filesystem::path> next_paths;
 
 		std::atomic<bool> stop_flag;
 		std::future<void> async_task;
@@ -101,7 +101,7 @@ class frog : public Gtk::Window {
 		void navigate_hist_previous();
 		void navigate_hist_forward();
 		void navigate_up_dir();
-		void navigate_to_dir(const std::string &path);
+		void navigate_to_dir(std::filesystem::path);
 
 	protected:
 		void snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>&);

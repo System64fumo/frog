@@ -137,7 +137,7 @@ frog::frog() {
 		gslist_value.init(value.gobj());
 		auto files = Glib::SListHandler<Glib::RefPtr<Gio::File>>::slist_to_vector(gslist_value.get(), Glib::OwnershipType::OWNERSHIP_NONE);
 		for (const auto& file : files) {
-			Glib::RefPtr<Gio::File> destination = Gio::File::create_for_path(current_path + "/" + file->get_basename());
+			Glib::RefPtr<Gio::File> destination = Gio::File::create_for_path(current_path.string() + "/" + file->get_basename());
 
 			// TODO: Handle conflicts
 			if (destination->query_exists()) {
@@ -280,7 +280,7 @@ bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::Mo
 	// Escape key
 	if (keycode == 9) {
 		button_dummy.grab_focus();
-		entry_path.set_text(current_path);
+		entry_path.set_text(current_path.string());
 	}
 
 	// Slash key
@@ -342,9 +342,8 @@ void frog::on_filebox_child_activated(Gtk::FlowBoxChild* child) {
 
 	// TODO: Can't open folders from desktop mode
 	if (entry->is_directory && !desktop_mode) {
-		std::string new_path = path + "/" + entry->label.get_text();
 		next_paths.clear();
-		navigate_to_dir(new_path);
+		navigate_to_dir(std::filesystem::path(path + "/" + entry->label.get_text()));
 	}
 	else {
 		std::string cmd = "xdg-open \"" + path + '/' + entry->label.get_text() + '"';
@@ -363,16 +362,8 @@ void frog::on_places_child_activated(Gtk::FlowBoxChild *child) {
 
 void frog::on_dispatcher_files() {
 	while (!widget_queue.empty()) {
-		auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(widget_queue.front());
-		auto f_entry = dynamic_cast<file_entry*>(fbox_child->get_child());
+		flowbox_files.append(*dynamic_cast<Gtk::FlowBoxChild*>(widget_queue.front()));
 		widget_queue.pop();
-		flowbox_files.append(*fbox_child);
-
-		// Start loading thumbnail
-		// TODO: Set limit to how many thumbnails can be loaded at a time
-		std::thread([f_entry]() {
-			f_entry->load_thumbnail();
-		}).detach();
 	}
 }
 
@@ -420,9 +411,8 @@ void frog::on_dispatcher_file_change() {
 	}
 	else {
 		// Fallback solution
-		std::string temp_path = current_path;
+		navigate_to_dir(current_path);
 		current_path = "";
-		navigate_to_dir(temp_path);
 	}
 }
 

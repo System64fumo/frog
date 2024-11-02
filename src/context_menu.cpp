@@ -93,7 +93,7 @@ void frog::menu_dir_setup() {
 	// TODO: Make all actions async
 	section1->append("Create New Folder", "dir.newdir");
 	action_group->add_action("newdir", [&](){
-		std::string path = current_path + "/New Folder";
+		std::string path = current_path.string() + "/New Folder";
 		std::string desired_name = path;
 		int suffix = 0;
 
@@ -113,7 +113,7 @@ void frog::menu_dir_setup() {
 
 	section1->append("Create New File", "dir.newfile");
 	action_group->add_action("newfile", [&](){
-		const std::string file_path{current_path + "/New file"};
+		const std::string file_path{current_path.string() + "/New file"};
 
 		std::string desired_name = file_path;
 		int suffix = 0;
@@ -164,7 +164,7 @@ void frog::menu_dir_setup() {
 					if (operation == "copy") {
 						std::printf("Copying: %s to %s\n", path.string().c_str(), current_path.c_str());
 
-						std::string desired_name = current_path +  "/" + path.filename().string();
+						std::string desired_name = current_path.string() +  "/" + path.filename().string();
 						size_t dot_pos = desired_name.find_last_of('.');
 						std::string name = desired_name.substr(0, dot_pos);
 						std::string extension = desired_name.substr(dot_pos);
