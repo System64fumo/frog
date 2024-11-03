@@ -3,6 +3,9 @@
 
 #include <fstream>
 #include <algorithm>
+#include <gtkmm/dialog.h>
+#include <gtkmm/label.h>
+#include <gtkmm/icontheme.h>
 
 void frog::menu_file_setup() {
 	menu_file = Gio::Menu::create();
@@ -72,8 +75,11 @@ void frog::menu_file_setup() {
 	});
 
 	section3->append("Properties", "file.properties");
-	action_group->add_action("properties", [](){
+	action_group->add_action("properties", [&](){
 		std::printf("Clicked: properties\n");
+		auto selected = flowbox_files.get_selected_children()[0];
+		auto f_entry = dynamic_cast<file_entry*>(selected->get_child());
+		create_properties_dialog(f_entry);
 	});
 }
 
@@ -194,8 +200,18 @@ void frog::menu_dir_setup() {
 	});
 
 	section3->append("Properties", "dir.properties");
-	action_group->add_action("properties", [](){
+	action_group->add_action("properties", [&](){
 		std::printf("Clicked: properties\n");
+		auto selected = flowbox_files.get_selected_children();
+		file_entry* f_entry;
+		if (selected.size() > 0) {
+			f_entry = dynamic_cast<file_entry*>(selected[0]->get_child());
+		}
+		else {
+			std::filesystem::directory_entry entry(current_path);
+			f_entry = Gtk::make_managed<file_entry>(entry);
+		}
+		create_properties_dialog(f_entry);
 	});
 }
 
@@ -218,4 +234,32 @@ void frog::on_right_clicked(const int &n_press,
 	popovermenu_context_menu.set_pointing_to(rect);
 	popovermenu_context_menu.set_menu_model(menu_file);
 	popovermenu_context_menu.popup();
+}
+
+void frog::create_properties_dialog(file_entry* f_entry) {
+	Gtk::Dialog* dialog = Gtk::make_managed<Gtk::Dialog>();
+	Gtk::Box* box_content = dialog->get_content_area();
+	dialog->set_transient_for(*this);
+	dialog->set_default_size(300, 400);
+
+	// Preview
+	Gtk::Box* box_preview = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+	Gtk::Label* label_file_name = Gtk::make_managed<Gtk::Label>();
+	label_file_name->set_text(f_entry->file_name);
+
+	// Icon
+	Gtk::Image* image_icon = Gtk::make_managed<Gtk::Image>();
+	image_icon->set_pixel_size(64);
+	auto icon_theme = Gtk::IconTheme::get_for_display(Gdk::Display::get_default());
+	auto icon_info = icon_theme->lookup_icon(f_entry->file_icon, f_entry->icon_size);
+	auto file = icon_info->get_file();
+	auto icon = Gdk::Texture::create_from_file(file);
+	image_icon->set(icon);
+
+	box_preview->set_margin_top(32);
+	box_preview->append(*image_icon);
+	box_preview->append(*label_file_name);
+	box_content->append(*box_preview);
+
+	dialog->show();
 }
