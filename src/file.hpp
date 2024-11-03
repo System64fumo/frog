@@ -12,6 +12,10 @@ class file_entry : public Gtk::Box {
 
 		std::string path;
 		bool is_directory;
+		std::string file_name;
+		std::string file_icon;
+		int file_size;
+		const int icon_size = 64;
 		Gtk::Image image;
 		Gtk::EditableLabel label;
 
@@ -20,10 +24,6 @@ class file_entry : public Gtk::Box {
 	private:
 		Glib::RefPtr<Gdk::Pixbuf> pixbuf;
 
-		const int icon_size = 64;
-		std::string file_name;
-		int file_size;
-		std::string file_icon;
 		std::string extension;
 
 		Glib::RefPtr<Gdk::Pixbuf> resize_thumbnail(const Glib::RefPtr<Gdk::Pixbuf>&);

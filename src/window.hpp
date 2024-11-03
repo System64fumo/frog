@@ -96,6 +96,7 @@ class frog : public Gtk::Window {
 		void sidebar_setup();
 		void menu_file_setup();
 		void menu_dir_setup();
+		void create_properties_dialog(file_entry*);
 		void create_file_entry(const std::filesystem::directory_entry &entry);
 
 		void navigate_hist_previous();
