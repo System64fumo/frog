@@ -6,6 +6,7 @@
 #include <gtkmm/dialog.h>
 #include <gtkmm/label.h>
 #include <gtkmm/icontheme.h>
+#include <gtkmm/centerbox.h>
 
 void frog::menu_file_setup() {
 	menu_file = Gio::Menu::create();
@@ -244,8 +245,7 @@ void frog::create_properties_dialog(file_entry* f_entry) {
 
 	// Preview
 	Gtk::Box* box_preview = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-	Gtk::Label* label_file_name = Gtk::make_managed<Gtk::Label>();
-	label_file_name->set_text(f_entry->file_name);
+	Gtk::Label* label_file_name = Gtk::make_managed<Gtk::Label>(f_entry->file_name);
 
 	// Icon
 	Gtk::Image* image_icon = Gtk::make_managed<Gtk::Image>();
@@ -257,9 +257,29 @@ void frog::create_properties_dialog(file_entry* f_entry) {
 	image_icon->set(icon);
 
 	box_preview->set_margin_top(32);
+	box_preview->set_margin_bottom(32);
 	box_preview->append(*image_icon);
 	box_preview->append(*label_file_name);
 	box_content->append(*box_preview);
 
+	Gtk::Box* box_details = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+	box_details->set_size_request(280, -1);
+	box_details->get_style_context()->add_class("card");
+	box_details->set_hexpand(true);
+	box_details->set_halign(Gtk::Align::CENTER);
+	box_details->set_valign(Gtk::Align::START);
+
+	// TODO: Add size conversion (Bytes, KBytes, MBytes, GBytes, Ect..)
+	Gtk::CenterBox* centerbox_row_size = Gtk::make_managed<Gtk::CenterBox>();
+	centerbox_row_size->get_style_context()->add_class("property");
+	Gtk::Label* label_size_title = Gtk::make_managed<Gtk::Label>("Size");
+	Gtk::Label* label_size_content = Gtk::make_managed<Gtk::Label>(std::to_string(f_entry->file_size));
+	
+	centerbox_row_size->set_start_widget(*label_size_title);
+	centerbox_row_size->set_end_widget(*label_size_content);
+
+	box_details->append(*centerbox_row_size);
+
+	box_content->append(*box_details);
 	dialog->show();
 }

@@ -65,3 +65,10 @@ editablelabel.editing selection {
 .box_overlay {
 	background: rgba(0, 0, 0, 0.25);
 }
+
+.card .property {
+	padding: 10px;
+}
+.card .property:not(:last-child) {
+	border-bottom: 1px solid @borders;
+}
