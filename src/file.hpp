@@ -7,7 +7,7 @@
 
 class file_entry : public Gtk::Box {
 	public:
-		file_entry(const std::filesystem::directory_entry &entry);
+		file_entry(const std::filesystem::directory_entry&);
 		~file_entry();
 
 		std::string path;

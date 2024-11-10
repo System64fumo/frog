@@ -362,7 +362,20 @@ void frog::on_places_child_activated(Gtk::FlowBoxChild *child) {
 
 void frog::on_dispatcher_files() {
 	while (!widget_queue.empty()) {
-		flowbox_files.append(*dynamic_cast<Gtk::FlowBoxChild*>(widget_queue.front()));
+		auto f_entry = dynamic_cast<file_entry*>(widget_queue.front());
+		Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
+		fbox_child->set_size_request(96,110);
+		fbox_child->set_child(*f_entry);
+		fbox_child->set_focusable(false); // Fixes focus issue when renaming
+		fbox_child->set_valign(Gtk::Align::START);
+
+		Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
+		click_gesture->set_button(GDK_BUTTON_SECONDARY);
+		click_gesture->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &frog::on_right_clicked), fbox_child));
+		f_entry->add_controller(click_gesture);
+
+		// TODO: Move thumbnail generation here, Attempt to lazy load (Again)
+		flowbox_files.append(*fbox_child);
 		widget_queue.pop();
 	}
 }
@@ -417,21 +430,9 @@ void frog::on_dispatcher_file_change() {
 }
 
 void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
-	Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
-	fbox_child->set_size_request(96,110);
 	file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
-	fbox_child->set_child(*f_entry);
-	fbox_child->set_focusable(false); // Fixes focus issue when renaming
-	fbox_child->set_valign(Gtk::Align::START);
-
-	Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
-	click_gesture->set_button(GDK_BUTTON_SECONDARY);
-	click_gesture->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &frog::on_right_clicked), fbox_child));
-	f_entry->add_controller(click_gesture);
 	std::lock_guard<std::mutex> lock(queue_mutex);
-	widget_queue.push(fbox_child);
-
-	f_entry->get_style_context()->add_class("file_entry");
+	widget_queue.push(f_entry);
 }
 
 void frog::snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>& snapshot) {
