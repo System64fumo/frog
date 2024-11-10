@@ -16,8 +16,6 @@
 #include <filesystem>
 #include <atomic>
 #include <future>
-#include <mutex>
-#include <queue>
 
 #include "dir_watcher.hpp"
 #include "xdg_dirs.hpp"
@@ -68,9 +66,9 @@ class frog : public Gtk::Window {
 
 		Gtk::ScrolledWindow scrolled_window_files;
 		Gtk::FlowBox flowbox_files;
-		Glib::Dispatcher dispatcher_files;
+		Glib::Dispatcher dispatcher_file;
+		Glib::Dispatcher dispatcher_file_thumbnail;
 		Glib::Dispatcher dispatcher_file_change;
-		std::vector<Gtk::FlowBoxChild*> file_widgets;
 		Gtk::Button button_dummy;
 
 		Glib::RefPtr<Gio::Menu> menu_file;
@@ -94,7 +92,7 @@ class frog : public Gtk::Window {
 		void menu_file_setup();
 		void menu_dir_setup();
 		void create_properties_dialog(file_entry*);
-		void create_file_entry(const std::filesystem::directory_entry &entry);
+		void create_file_entry(const std::filesystem::directory_entry&, const bool&);
 
 		void navigate_hist_previous();
 		void navigate_hist_forward();

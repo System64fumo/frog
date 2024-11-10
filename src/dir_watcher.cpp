@@ -5,7 +5,7 @@
 #include <cstring>
 
 directory_watcher::directory_watcher(Glib::Dispatcher *dispatcher) :  stop_thread(false), inotify_fd(-1), event_fd(-1) {
-	this->dispatcher = dispatcher;
+	dispatcher = dispatcher;
 }
 
 directory_watcher::~directory_watcher() {
@@ -21,8 +21,8 @@ void directory_watcher::start_watching(const std::string &directory) {
 	if (event_fd < 0)
 		return;
 
-	watcher_thread = std::jthread([this, directory](std::stop_token stop_token) {
-		this->watch_directory(directory, stop_token);
+	watcher_thread = std::jthread([&, directory](std::stop_token stop_token) {
+		watch_directory(directory, stop_token);
 	});
 }
 
