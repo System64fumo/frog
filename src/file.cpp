@@ -83,10 +83,8 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box
 	});
 	add_controller(source);
 
-	// TODO: Don't run this in another thread..
-	// It will cause a memory leak..
+	// TODO: This is not supposed to run here..
 	load_data();
-	load_thumbnail();
 }
 
 file_entry::~file_entry() {
@@ -133,6 +131,9 @@ void file_entry::load_data() {
 		}
 	}
 
+	// TODO: This takes far too long to compute
+	// Also uses a lot of ram per instance
+
 	// Load icons
 	auto icon_theme = Gtk::IconTheme::get_for_display(Gdk::Display::get_default());
 	auto icon_info = icon_theme->lookup_icon(file_icon, icon_size);
@@ -141,6 +142,7 @@ void file_entry::load_data() {
 
 	image.set(icon);
 	source->set_icon(icon, icon_size / 2, icon_size / 2);
+	icon.reset();
 }
 
 void file_entry::load_thumbnail() {
@@ -206,7 +208,6 @@ void file_entry::load_thumbnail() {
 
 	image.set(resize_thumbnail(pixbuf));
 	pixbuf.reset();
-	pixbuf = nullptr;
 }
 
 Glib::RefPtr<Gdk::Pixbuf> file_entry::resize_thumbnail(const Glib::RefPtr<Gdk::Pixbuf>& pixbuf) {

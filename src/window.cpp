@@ -376,8 +376,7 @@ void frog::on_dispatcher_file_change() {
 	// I would like to eventually just rename the label outright
 	if (event_type == "created" || event_type == "moved_to") {
 		std::filesystem::directory_entry entry(event_name);
-		create_file_entry(entry);
-		dispatcher_files.emit();
+		create_file_entry(entry, true);
 		return;
 	}
 	else if (event_type == "deleted" || event_type == "moved_from") {
@@ -407,7 +406,7 @@ void frog::on_dispatcher_file_change() {
 	}
 }
 
-void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
+void frog::create_file_entry(const std::filesystem::directory_entry &entry, const bool& load_thumbnail) {
 	file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
 	Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
 
@@ -421,11 +420,16 @@ void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
 	click_gesture->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &frog::on_right_clicked), fbox_child));
 	f_entry->add_controller(click_gesture);
 
-	flowbox_files.append(*fbox_child);
+	if (load_thumbnail)
+		f_entry->load_thumbnail();
+
+	Glib::signal_idle().connect_once([&, fbox_child] {
+		flowbox_files.append(*fbox_child);
+	});
 }
 
 void frog::snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>& snapshot) {
-	Glib::signal_idle().connect([this]() {
+	Glib::signal_idle().connect([&]() {
 		switch_layout();
 		return true;
 	});

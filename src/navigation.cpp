@@ -78,15 +78,39 @@ void frog::navigate_to_dir(std::filesystem::path fs_path) {
 	popovermenu_context_menu.unparent();
 	flowbox_files.remove_all();
 
+
+	// File loading is split into 3 phases
+	// This makes the UI responsive at the cost of my sanity (Especially on network mounts or slow disks)
+	// Thank me later..
 	stop_flag.store(false);
-	async_task = std::async(std::launch::async, [this, fs_path]() {
+	async_task = std::async(std::launch::async, [&, fs_path]() {
+		// Phase 1: Get all files in current dir
 		generate_entry_autocomplete(fs_path.string());
 		for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(fs_path)) {
 			if (stop_flag.load())
 				break;
 
-			create_file_entry(entry);
-			dispatcher_files.emit();
+			create_file_entry(entry, false);
+		}
+		auto children = flowbox_files.get_children();
+
+		// TODO: Re enable this..
+		// Phase 2: Load data
+		/*for (auto child : children) {
+			if (stop_flag.load())
+				break;
+			auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
+			auto f_entry = dynamic_cast<file_entry*>(fbox_child->get_child());
+			f_entry->load_data();
+		}*/
+
+		// Phase 3: Load thumbnails
+		for (auto child : children) {
+			if (stop_flag.load())
+				break;
+			auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
+			auto f_entry = dynamic_cast<file_entry*>(fbox_child->get_child());
+			f_entry->load_thumbnail();
 		}
 	});
 
