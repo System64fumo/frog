@@ -118,7 +118,6 @@ frog::frog() {
 	scrolled_window_files.add_controller(click_gesture);
 	scrolled_window_files.add_controller(right_click_gesture);
 
-	dispatcher_files.connect(sigc::mem_fun(*this, &frog::on_dispatcher_files));
 	dispatcher_file_change.connect(sigc::mem_fun(*this, &frog::on_dispatcher_file_change));
 
 	flowbox_files.signal_child_activated().connect(sigc::mem_fun(*this, &frog::on_filebox_child_activated));
@@ -360,28 +359,7 @@ void frog::on_places_child_activated(Gtk::FlowBoxChild *child) {
 	navigate_to_dir(place_entry->file_path);
 }
 
-void frog::on_dispatcher_files() {
-	while (!widget_queue.empty()) {
-		auto f_entry = dynamic_cast<file_entry*>(widget_queue.front());
-		Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
-		fbox_child->set_size_request(96,110);
-		fbox_child->set_child(*f_entry);
-		fbox_child->set_focusable(false); // Fixes focus issue when renaming
-		fbox_child->set_valign(Gtk::Align::START);
-
-		Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
-		click_gesture->set_button(GDK_BUTTON_SECONDARY);
-		click_gesture->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &frog::on_right_clicked), fbox_child));
-		f_entry->add_controller(click_gesture);
-
-		// TODO: Move thumbnail generation here, Attempt to lazy load (Again)
-		flowbox_files.append(*fbox_child);
-		widget_queue.pop();
-	}
-}
-
 void frog::on_dispatcher_file_change() {
-	std::lock_guard<std::mutex> lock(watcher->queue_mutex);
 	std::string event_type, event_name;
 
 	event_type = watcher->event_type.front();
@@ -431,8 +409,19 @@ void frog::on_dispatcher_file_change() {
 
 void frog::create_file_entry(const std::filesystem::directory_entry &entry) {
 	file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
-	std::lock_guard<std::mutex> lock(queue_mutex);
-	widget_queue.push(f_entry);
+	Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
+
+	fbox_child->set_size_request(96,110);
+	fbox_child->set_child(*f_entry);
+	fbox_child->set_focusable(false); // Fixes focus issue when renaming
+	fbox_child->set_valign(Gtk::Align::START);
+
+	Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
+	click_gesture->set_button(GDK_BUTTON_SECONDARY);
+	click_gesture->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &frog::on_right_clicked), fbox_child));
+	f_entry->add_controller(click_gesture);
+
+	flowbox_files.append(*fbox_child);
 }
 
 void frog::snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>& snapshot) {

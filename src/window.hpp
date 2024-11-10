@@ -36,8 +36,6 @@ class frog : public Gtk::Window {
 
 		std::atomic<bool> stop_flag;
 		std::future<void> async_task;
-		std::queue<file_entry*> widget_queue;
-		std::mutex queue_mutex;
 		bool sidebar_should_hide = true;
 
 		directory_watcher *watcher = nullptr;
@@ -84,7 +82,6 @@ class frog : public Gtk::Window {
 		void generate_entry_autocomplete(const std::string& path);
 
 		int sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2);
-		void on_dispatcher_files();
 		void on_dispatcher_file_change();
 		void on_filebox_child_activated(Gtk::FlowBoxChild* child);
 		void on_places_child_activated(Gtk::FlowBoxChild* child);

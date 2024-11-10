@@ -2,7 +2,6 @@
 #include "icons.hpp"
 #include "xdg_dirs.hpp"
 
-#include <gtkmm/dragsource.h>
 #include <gtkmm/droptarget.h>
 #include <gtkmm/stack.h>
 #include <gtkmm/label.h>
@@ -15,20 +14,14 @@
 #include <gst/video/video-info.h>
 #include <thread>
 
-file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box(Gtk::Orientation::VERTICAL), path(entry.path()), file_name(entry.path().filename().string()) {
+file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box(Gtk::Orientation::VERTICAL), label("Loading.."), entry(entry) {
 	get_style_context()->add_class("file_entry");
 
 	append(image);
 	image.set_pixel_size(icon_size);
 	image.set_from_icon_name("content-loading-symbolic");
 
-	// TODO: Add option to show/hide hidden files
-	// TODO: Add option to enable/disable shadowing of hidden files
-	if (file_name[0] == '.')
-		image.set_opacity(0.75);
-
 	append(label);
-	label.set_text(file_name);
 	label.set_halign(Gtk::Align::CENTER);
 	auto stack = dynamic_cast<Gtk::Stack*>(label.get_children()[0]);
 	auto ulabel = dynamic_cast<Gtk::Label*>(stack->get_children()[0]);
@@ -53,10 +46,12 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box
 
 	// Figure out the correct icon
 	file_size = entry.is_regular_file() ? entry.file_size() : 0;
-	is_directory=entry.is_directory();
+	is_directory = entry.is_directory();
+	file_icon = entry.is_directory() ? "default-folder" : "application-blank";
+	image.set_from_icon_name(file_icon);
 
 	// Set up drag and drop
-	auto source = Gtk::DragSource::create();
+	source = Gtk::DragSource::create();
 	source->set_actions(Gdk::DragAction::MOVE);
 
 	source->signal_prepare().connect([&](const double &x, const double &y) {
@@ -87,6 +82,30 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box
 			std::printf("Don't delete data\n");
 	});
 	add_controller(source);
+
+	// TODO: Don't run this in another thread..
+	// It will cause a memory leak..
+	load_data();
+	load_thumbnail();
+}
+
+file_entry::~file_entry() {
+	// TODO: Cleanup is still not perfect
+	pixbuf.reset();
+	image.clear();
+	pixbuf = nullptr;
+}
+
+void file_entry::load_data() {
+	path = entry.path();
+	file_name = entry.path().filename().string();
+
+	// TODO: Add option to show/hide hidden files
+	// TODO: Add option to enable/disable shadowing of hidden files
+	if (file_name[0] == '.')
+		image.set_opacity(0.75);
+
+	label.set_text(file_name);
 
 	// Figure out what icon to use
 	if (is_directory) {
@@ -122,17 +141,6 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box
 
 	image.set(icon);
 	source->set_icon(icon, icon_size / 2, icon_size / 2);
-
-	// TODO: Don't run this in another thread..
-	// It will cause a memory leak..
-	load_thumbnail();
-}
-
-file_entry::~file_entry() {
-	// TODO: Cleanup is still not perfect
-	pixbuf.reset();
-	image.clear();
-	pixbuf = nullptr;
 }
 
 void file_entry::load_thumbnail() {
