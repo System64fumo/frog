@@ -75,7 +75,7 @@ void frog::navigate_to_dir(std::filesystem::path fs_path) {
 	}
 
 	// Cleanup
-	std::queue<Gtk::FlowBoxChild*> empty;
+	std::queue<file_entry*> empty;
 	std::swap(widget_queue, empty);
 	popovermenu_context_menu.unparent();
 	flowbox_files.remove_all();

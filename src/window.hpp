@@ -36,7 +36,7 @@ class frog : public Gtk::Window {
 
 		std::atomic<bool> stop_flag;
 		std::future<void> async_task;
-		std::queue<Gtk::FlowBoxChild*> widget_queue;
+		std::queue<file_entry*> widget_queue;
 		std::mutex queue_mutex;
 		bool sidebar_should_hide = true;
 

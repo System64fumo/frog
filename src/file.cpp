@@ -15,10 +15,8 @@
 #include <gst/video/video-info.h>
 #include <thread>
 
-file_entry::file_entry(const std::filesystem::directory_entry &entry) {
-	path = entry.path();
-	file_name = entry.path().filename().string();
-	set_orientation(Gtk::Orientation::VERTICAL);
+file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box(Gtk::Orientation::VERTICAL), path(entry.path()), file_name(entry.path().filename().string()) {
+	get_style_context()->add_class("file_entry");
 
 	append(image);
 	image.set_pixel_size(icon_size);
