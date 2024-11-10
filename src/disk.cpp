@@ -41,8 +41,8 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 		struct udev_list_entry *devices = udev_enumerate_get_list_entry(enumerate);
 
 		// Iterate through devices
-		for (struct udev_list_entry *dev_list_entry = devices; dev_list_entry; 
-		dev_list_entry = udev_list_entry_get_next(dev_list_entry)) {
+		for (struct udev_list_entry *dev_list_entry = devices; dev_list_entry;
+			dev_list_entry = udev_list_entry_get_next(dev_list_entry)) {
 
 			const char *path = udev_list_entry_get_name(dev_list_entry);
 			std::string p = path;
@@ -53,6 +53,9 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 			struct udev_device *dev = udev_device_new_from_syspath(udev, path);
 
 			const char *model = udev_device_get_property_value(dev, "ID_MODEL");
+			if (model == nullptr)
+				continue;
+
 			new_disk.model = model;
 			udev_device_unref(dev);
 		}
