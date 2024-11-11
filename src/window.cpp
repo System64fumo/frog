@@ -262,9 +262,8 @@ void frog::sidebar_setup() {
 			if (!partition.should_show)
 				continue;
 
-			double used_percentage = (double)partition.used_bytes / (double)partition.total_bytes;
-			std::string icon = disk.removable ? "drive-removable-media-usb-symbolic" : "drive-harddisk-symbolic";
-			place *place_entry = Gtk::make_managed<place>(partition.label, partition.mount_path, icon, used_percentage);
+			const std::string icon = disk.removable ? "drive-removable-media-usb-symbolic" : "drive-harddisk-symbolic";
+			place *place_entry = Gtk::make_managed<place>(partition.label, partition.mount_path, icon, partition);
 			if (!partition.mount_path.empty()) {
 				place_entry->set_tooltip_text(dm.to_human_readable(partition.used_bytes) + "/" + dm.to_human_readable(partition.total_bytes));
 			}
@@ -350,10 +349,12 @@ void frog::on_filebox_child_activated(Gtk::FlowBoxChild* child) {
 	}
 }
 
-void frog::on_places_child_activated(Gtk::FlowBoxChild *child) {
+void frog::on_places_child_activated(Gtk::FlowBoxChild* child) {
 	place *place_entry = dynamic_cast<place*>(child->get_child());
 	if (!place_entry)
 		return;
+
+	// TODO: Add a polkit thing to mount the disk
 
 	next_paths.clear();
 	navigate_to_dir(place_entry->file_path);
