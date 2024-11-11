@@ -2,11 +2,8 @@
 
 #include <sys/inotify.h>
 #include <sys/eventfd.h>
-#include <cstring>
 
-directory_watcher::directory_watcher(Glib::Dispatcher *dispatcher) :  stop_thread(false), inotify_fd(-1), event_fd(-1) {
-	dispatcher = dispatcher;
-}
+directory_watcher::directory_watcher(const Glib::Dispatcher& dispatcher) :  stop_thread(false), inotify_fd(-1), event_fd(-1), dispatcher(dispatcher) {}
 
 directory_watcher::~directory_watcher() {
 	stop_watching();
@@ -108,7 +105,7 @@ void directory_watcher::watch_directory(const std::string &directory, std::stop_
 				else if (event->mask & IN_MOVED_TO)
 					event_type.push("moved_to");
 
-				dispatcher->emit();
+				dispatcher.emit();
 			}
 			i += event_size + event->len;
 		}

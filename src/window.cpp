@@ -360,12 +360,10 @@ void frog::on_places_child_activated(Gtk::FlowBoxChild *child) {
 }
 
 void frog::on_dispatcher_file_change() {
-	std::string event_type, event_name;
-
-	event_type = watcher->event_type.front();
+	const std::string event_type = watcher->event_type.front();
 	watcher->event_type.pop();
 
-	event_name = watcher->event_name.front();
+	const std::string event_name = watcher->event_name.front();
 	watcher->event_name.pop();
 
 	// Temporary

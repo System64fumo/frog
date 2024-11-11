@@ -8,7 +8,7 @@
 
 class directory_watcher {
 	public:
-		directory_watcher(Glib::Dispatcher *dispatcher);
+		directory_watcher(const Glib::Dispatcher&);
 		~directory_watcher();
 
 		void start_watching(const std::string &directory);
@@ -29,5 +29,5 @@ class directory_watcher {
 		int inotify_fd;
 		int event_fd;
 
-		Glib::Dispatcher *dispatcher = nullptr;
+		const Glib::Dispatcher& dispatcher;
 };

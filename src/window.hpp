@@ -13,7 +13,6 @@
 #include <gtkmm/gestureclick.h>
 #include <giomm/menu.h>
 #include <giomm/simpleactiongroup.h>
-#include <filesystem>
 #include <atomic>
 #include <future>
 
