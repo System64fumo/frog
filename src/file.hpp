@@ -22,6 +22,7 @@ class file_entry : public Gtk::Box {
 
 		void load_data();
 		void load_thumbnail();
+		void load_metadata();
 
 	private:
 		const std::filesystem::directory_entry entry;

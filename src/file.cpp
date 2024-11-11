@@ -44,8 +44,7 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box
 		}
 	});
 
-	// Figure out the correct icon
-	file_size = entry.is_regular_file() ? entry.file_size() : 0;
+	file_size = 0;
 	is_directory = entry.is_directory();
 	file_icon = entry.is_directory() ? "default-folder" : "application-blank";
 	image.set_from_icon_name(file_icon);
@@ -208,6 +207,23 @@ void file_entry::load_thumbnail() {
 
 	image.set(resize_thumbnail(pixbuf));
 	pixbuf.reset();
+}
+
+void file_entry::load_metadata() {
+	std::printf("Loading metadata\n");
+	// Filesize
+	if (is_directory) {
+		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
+			if (std::filesystem::is_regular_file(entry)) {
+				file_size += std::filesystem::file_size(entry);
+			}
+		}
+	}
+	else {
+		file_size = entry.file_size();
+	}
+
+	// TODO: Add more metadata stuff (Image size, Video length, Ect..)
 }
 
 Glib::RefPtr<Gdk::Pixbuf> file_entry::resize_thumbnail(const Glib::RefPtr<Gdk::Pixbuf>& pixbuf) {
