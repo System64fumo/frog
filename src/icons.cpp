@@ -39,7 +39,7 @@ void load_icon_map() {
 	icon_from_extension["oga"] = "audio-ogg";
 	icon_from_extension["ogv"] = "video-ogg";
 	icon_from_extension["ogx"] = "application-ogg";
-	icon_from_extension["opus"] = "audio-ogg";
+	icon_from_extension["opus"] = "video-x-ogm+ogg";
 	icon_from_extension["otf"] = "font-otf";
 	icon_from_extension["ttf"] = "font-ttf";
 	icon_from_extension["png"] = "image-png";

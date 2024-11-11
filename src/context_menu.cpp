@@ -238,6 +238,9 @@ void frog::on_right_clicked(const int &n_press,
 }
 
 void frog::create_properties_dialog(file_entry* f_entry) {
+	// TODO: Lazy load metadata
+	f_entry->load_metadata();
+
 	Gtk::Dialog* dialog = Gtk::make_managed<Gtk::Dialog>();
 	Gtk::Box* box_content = dialog->get_content_area();
 	dialog->set_transient_for(*this);
@@ -246,6 +249,10 @@ void frog::create_properties_dialog(file_entry* f_entry) {
 	// Preview
 	Gtk::Box* box_preview = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
 	Gtk::Label* label_file_name = Gtk::make_managed<Gtk::Label>(f_entry->file_name);
+	label_file_name->set_wrap_mode(Pango::WrapMode::WORD_CHAR);
+	label_file_name->set_ellipsize(Pango::EllipsizeMode::END);
+	label_file_name->set_max_width_chars(10);
+	label_file_name->set_lines(2);
 
 	// Icon
 	Gtk::Image* image_icon = Gtk::make_managed<Gtk::Image>();
