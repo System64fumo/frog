@@ -1,7 +1,7 @@
 #include "place.hpp"
 #include "xdg_dirs.hpp"
 
-place::place(std::string label_str, std::string path_str, std::string custom_icon, double fraction) {
+place::place(std::string label_str, std::string path_str, std::string custom_icon, const std::optional<disk_manager::partition>& part) {
 	file_path = path_str;
 	get_style_context()->add_class("place");
 	append(image);
@@ -11,14 +11,22 @@ place::place(std::string label_str, std::string path_str, std::string custom_ico
 	label.set_text(label_str);
 	label.set_halign(Gtk::Align::START);
 
-	if (fraction != 0) {
-		Gtk::Box *box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-		progressbar_size.set_fraction(fraction);
-		progressbar_size.set_margin_top(5);
-		append(*box);
-		box->set_hexpand(true);
-		box->append(label);
-		box->append(progressbar_size);
+	if (part) {
+		is_disk = true;
+		this->part = *part;
+		const double used_percentage = (double)part->used_bytes / (double)part->total_bytes;
+
+		if (used_percentage != 0) {
+			Gtk::Box *box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+			progressbar_size.set_fraction(used_percentage);
+			progressbar_size.set_margin_top(5);
+			append(*box);
+			box->set_hexpand(true);
+			box->append(label);
+			box->append(progressbar_size);
+		}
+		else
+			append(label);
 	}
 	else
 		append(label);
