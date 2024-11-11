@@ -121,7 +121,7 @@ void frog::navigate_to_dir(std::filesystem::path fs_path) {
 			delete watcher;
 	}
 
-	watcher = new directory_watcher(&dispatcher_file_change);
+	watcher = new directory_watcher(dispatcher_file_change);
 	watcher->start_watching(current_path);
 
 	// Select pinned entry from sidebar if exists
