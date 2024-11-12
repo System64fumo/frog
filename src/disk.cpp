@@ -15,8 +15,7 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 
 		// Ignore non disks
 		if (disk_name.find("loop") != std::string::npos ||
-			disk_name.find("ram") != std::string::npos ||
-			disk_name.find("dm-") != std::string::npos)
+			disk_name.find("ram") != std::string::npos)
 			continue;
 
 		disk new_disk;
@@ -79,6 +78,19 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 				new_partition.should_show = (fstab[partition_name][3].find("x-gvfs-show") != std::string::npos);
 			}
 
+			// Check if the partition is encrypted
+			for (const auto& entry : std::filesystem::directory_iterator("/sys/block/" + new_disk.name + "/" + new_partition.name + "/holders")) {
+				if (std::filesystem::is_directory(entry)) {
+					std::ifstream file(entry.path().string() + "/dm/name");
+					std::stringstream buffer;
+					buffer << file.rdbuf();
+					new_partition.holder = "mapper/" + buffer.str().substr(0, buffer.str().size() - 1);
+					new_partition.mount_path = mounts[new_partition.holder];
+				}
+			}
+
+			bool mounted = !new_partition.mount_path.empty();
+
 			blkid_probe pr = blkid_new_probe_from_filename(("/dev/" + new_partition.name).c_str());
 			if (!pr)
 				continue;
@@ -98,13 +110,15 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 			// Cleanup
 			blkid_free_probe(pr);
 
-			bool mounted = !new_partition.mount_path.empty();
 			new_partition.used_bytes = 0;
 			new_partition.free_bytes = 0;
 			new_partition.used_bytes = 0;
 			if (mounted) {
 				struct statvfs stats;
-				statvfs(mounts[new_partition.name].c_str(), &stats);
+				if (!new_partition.holder.empty())
+					statvfs(mounts[new_partition.holder].c_str(), &stats);
+				else
+					statvfs(mounts[new_partition.name].c_str(), &stats);
 				new_partition.total_bytes = stats.f_blocks * stats.f_frsize;
 				new_partition.free_bytes = stats.f_bfree * stats.f_frsize;
 				new_partition.used_bytes = new_partition.total_bytes - new_partition.free_bytes;
