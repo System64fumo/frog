@@ -15,6 +15,7 @@ class disk_manager {
 			std::string label;
 			std::string type;
 			std::string mount_path;
+			std::string holder;
 			unsigned long total_bytes;
 			unsigned long free_bytes;
 			unsigned long used_bytes;
