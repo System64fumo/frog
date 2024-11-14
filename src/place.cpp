@@ -25,8 +25,10 @@ place::place(std::string label_str, std::string path_str, std::string custom_ico
 			box->append(label);
 			box->append(progressbar_size);
 		}
-		else
+		else {
 			append(label);
+			file_path = "";
+		}
 	}
 	else
 		append(label);

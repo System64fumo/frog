@@ -158,6 +158,30 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 		}
 	}
 
+	// Network shares (fstab)
+	for (const auto& fstab_entry : fstab) {
+		// Only check for network shares
+		if (fstab_entry.first.find(":/") == std::string::npos)
+			continue;
+
+		// Check if the share is mounted
+		if (mounts.find(fstab_entry.first) != mounts.end())
+			continue;
+
+		disk new_disk;
+		new_disk.removable = false;
+		new_disk.name = "Network disk";
+		partition new_partition;
+		new_partition.label = fstab_entry.second[1].substr(fstab_entry.second[1].rfind('/') + 1);
+		new_partition.should_show = fstab_entry.second[3].find("x-gvfs-show") != std::string::npos;
+		new_partition.mount_path = fstab_entry.second[1];
+		new_partition.total_bytes = 1;
+		new_partition.free_bytes = 0;
+		new_partition.used_bytes = 0;
+
+		new_disk.partitions.push_back(new_partition);
+		disks.push_back(new_disk);
+	}
 	return disks;
 }
 
@@ -229,6 +253,10 @@ std::map<std::string, std::vector<std::string>> disk_manager::get_fstab() {
 		while (stream >> token) {
 			if (token.rfind("/dev/", 0) == 0)
 				token = token.substr(5);
+			else if (token.find(":/") != std::string::npos) {
+				std::istringstream stream(line);
+				stream >> token;
+			}
 			fstab_entry.push_back(token);
 		}
 
