@@ -63,23 +63,6 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box
 
 		return Glib::wrap(contentProvider);
 	}, false);
-	source->signal_drag_end().connect([](const Glib::RefPtr<Gdk::Drag>& drag, bool delete_data) {
-		// TODO: This does not report the correct action
-		//
-		// DO NOT IMPLEMENT A DELETE FUNCTION UNTIL THIS IS RESOLVED
-		//
-
-		auto selected = drag->get_selected_action();
-		if ((selected & Gdk::DragAction::MOVE) == Gdk::DragAction::MOVE)
-			std::printf("Move\n");
-		else if ((selected & Gdk::DragAction::COPY) == Gdk::DragAction::COPY)
-			std::printf("Copy\n");
-
-		if (delete_data)
-			std::printf("Delete data\n");
-		else
-			std::printf("Don't delete data\n");
-	});
 	add_controller(source);
 
 	// TODO: This is not supposed to run here..
