@@ -153,6 +153,7 @@ void frog::menu_dir_setup() {
 				gsize bytes_size = bytes->get_size();
 				auto byte_data = bytes->get_data(bytes_size);
 				std::string data = std::string(reinterpret_cast<const char*>(byte_data), bytes_size);
+				data = decode_url(data);
 				std::printf("Data: %s\n", data.c_str());
 
 				std::istringstream stream(data);
@@ -161,35 +162,16 @@ void frog::menu_dir_setup() {
 				std::string operation;
 				std::getline(stream, operation);
 
-				// TODO: Remove escape sequences (eg %20 for space)
 				std::vector<std::filesystem::path> file_paths;
 				while (std::getline(stream, line))
 					file_paths.push_back(line.substr(7));
 
 				std::printf("Operation: %s\n", operation.c_str());
-				for (const auto& path : file_paths) {
-					if (operation == "copy") {
-						std::printf("Copying: %s to %s\n", path.string().c_str(), current_path.c_str());
-
-						std::string desired_name = current_path.string() +  "/" + path.filename().string();
-						size_t dot_pos = desired_name.find_last_of('.');
-						std::string name = desired_name.substr(0, dot_pos);
-						std::string extension = desired_name.substr(dot_pos);
-						int suffix = 0;
-				
-						while (std::filesystem::exists(desired_name)) {
-							suffix++;
-							desired_name = name + "-" + std::to_string(suffix) + extension;
-						}
-
-						std::ofstream file(desired_name);
-						if (!file) {
-							std::fprintf(stderr, "Failed to create a new file\n");
-						}
-
-						std::filesystem::copy_file(path, desired_name, std::filesystem::copy_options::overwrite_existing);
-					}
-					else if (operation == "cut") {
+				if (operation == "copy") {
+					file_op_copy(file_paths);
+				}
+				else if (operation == "cut") {
+					for (const auto& path : file_paths) {
 						// TODO: Run an optional validation check here to ensure the file was copied properly
 						std::printf("Moving: %s to %s\n", path.string().c_str(), current_path.c_str());
 						std::filesystem::rename(path, current_path / path.filename());
