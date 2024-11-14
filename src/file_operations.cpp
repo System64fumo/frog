@@ -25,13 +25,18 @@ void frog::file_op_copy(const std::vector<std::filesystem::path>& file_paths) {
 	for (const auto& path : file_paths) {
 		std::printf("Copying: %s to %s\n", path.string().c_str(), current_path.c_str());
 
-		// TODO: Files sometimes lack an extension, This needs fixing
 		std::string desired_name = current_path.string() +  "/" + path.filename().string();
-		size_t dot_pos = desired_name.find_last_of('.');
-		std::string name = desired_name.substr(0, dot_pos);
-		std::string extension = desired_name.substr(dot_pos);
-		int suffix = 0;
+		int dot_pos = desired_name.find_last_of('.');
+		std::string name = desired_name;
+		std::string extension;
+		if (dot_pos != -1) {
+			name = desired_name.substr(0, dot_pos);
+			extension = desired_name.substr(dot_pos);
+		}
 
+		// TODO: This should only run if the copy is from the same directory to the same directory
+		// Otherwise prompt the user for what action should be done with existing files
+		int suffix = 0;
 		while (std::filesystem::exists(desired_name)) {
 			suffix++;
 			desired_name = name + "-" + std::to_string(suffix) + extension;
