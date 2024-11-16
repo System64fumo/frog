@@ -8,6 +8,7 @@
 #include <gtkmm/text.h>
 #include <giomm/file.h>
 #include <gtkmm/icontheme.h>
+#include <gtkmm/flowbox.h>
 #include <glibmm/vectorutils.h>
 #include <glibmm/convert.h>
 #include <gstreamer-1.0/gst/gst.h>
@@ -54,12 +55,23 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box
 	source->set_actions(Gdk::DragAction::MOVE);
 
 	source->signal_prepare().connect([&](const double &x, const double &y) {
-		// TODO: Replace C implementation with the proper C++ implementation
-		// I have spent far too much time on this..
-		GFile *file = g_file_new_for_path(path.c_str());
+		auto flowbox = dynamic_cast<Gtk::FlowBox*>(get_parent()->get_parent());
+		auto selected_entries = flowbox->get_selected_children();
+		std::vector<GFile*> files;
+		for (const auto& selected_entry : selected_entries) {
+			auto slected_file_entry = dynamic_cast<file_entry*>(selected_entry->get_child());
+			GFile* file = g_file_new_for_path(slected_file_entry->path.c_str());
+			files.push_back(file);
+		}
+		GdkFileList* file_list = gdk_file_list_new_from_array(files.data(), files.size());
+
+		// Cleanup
+		for (GFile* file : files) {
+			g_object_unref(file);
+		}
+
 		GdkContentProvider *contentProvider;
-		GdkFileList* fileList = gdk_file_list_new_from_array(&file, 1);
-		contentProvider = gdk_content_provider_new_typed(GDK_TYPE_FILE_LIST, fileList);
+		contentProvider = gdk_content_provider_new_typed(GDK_TYPE_FILE_LIST, file_list);
 
 		return Glib::wrap(contentProvider);
 	}, false);
