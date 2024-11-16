@@ -1,34 +1,23 @@
 #include "utils.hpp"
-#include <ios>
-#include <iomanip>
 
-std::string to_human_readable(const uint64_t& bytes) {
-	const uint64_t KB = 1024;
-	const uint64_t MB = KB * 1024;
-	const uint64_t GB = MB * 1024;
-	const uint64_t TB = GB * 1024;
+std::string to_human_readable(const uint& bytes) {
+	// TODO: Consider adding support for *bit formats instead of just *byte formats
+	const char* suffixes[] = {"B", "KB", "MB", "GB", "TB", "PB"};
 
-	double value = static_cast<double>(bytes);
-	std::string unit;
-
-	if (bytes >= TB) {
-		value /= TB;
-		unit = "TB";
-	} else if (bytes >= GB) {
-		value /= GB;
-		unit = "GB";
-	} else if (bytes >= MB) {
-		value /= MB;
-		unit = "MB";
-	} else if (bytes >= KB) {
-		value /= KB;
-		unit = "KB";
-	} else {
-		unit = "B";
+	if (bytes == 0) {
+		return "0 B";
 	}
 
-	std::ostringstream oss;
-	oss << std::fixed << std::setprecision(2) << value << " " << unit;
+	int index = 0;
+	double size = bytes;
 
-	return oss.str();
+	while (size >= 1024 && index < 8) {
+		size /= 1024;
+		index++;
+	}
+
+	char buffer[50];
+	snprintf(buffer, sizeof(buffer), "%.2f %s", size, suffixes[index]);
+
+	return std::string(buffer);
 }
