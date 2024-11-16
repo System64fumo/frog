@@ -58,6 +58,8 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box
 		auto flowbox = dynamic_cast<Gtk::FlowBox*>(get_parent()->get_parent());
 		auto selected_entries = flowbox->get_selected_children();
 		std::vector<GFile*> files;
+
+		// TODO: Consider checking if the user has permission to move the files first?
 		for (const auto& selected_entry : selected_entries) {
 			auto slected_file_entry = dynamic_cast<file_entry*>(selected_entry->get_child());
 			GFile* file = g_file_new_for_path(slected_file_entry->path.c_str());
@@ -205,7 +207,6 @@ void file_entry::load_thumbnail() {
 }
 
 void file_entry::load_metadata() {
-	std::printf("Loading metadata\n");
 	// Filesize
 	if (is_directory) {
 		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
@@ -245,7 +246,7 @@ void file_entry::setup_drop_target() {
 				continue;
 			}
 
-			// TODO: Check for permissions (Both source and dest)
+			// TODO: Check if the user has permission to move files here
 			std::printf("Moving file: %s\n", file->get_path().c_str());
 			std::printf("To: %s\n", path.c_str());
 			file->move(destination);

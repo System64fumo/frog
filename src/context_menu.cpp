@@ -1,5 +1,6 @@
 #include "window.hpp"
 #include "file.hpp"
+#include "utils.hpp"
 
 #include <fstream>
 #include <algorithm>
@@ -262,7 +263,7 @@ void frog::create_properties_dialog(file_entry* f_entry) {
 	Gtk::CenterBox* centerbox_row_size = Gtk::make_managed<Gtk::CenterBox>();
 	centerbox_row_size->get_style_context()->add_class("property");
 	Gtk::Label* label_size_title = Gtk::make_managed<Gtk::Label>("Size");
-	Gtk::Label* label_size_content = Gtk::make_managed<Gtk::Label>(std::to_string(f_entry->file_size));
+	Gtk::Label* label_size_content = Gtk::make_managed<Gtk::Label>(to_human_readable(f_entry->file_size));
 	
 	centerbox_row_size->set_start_widget(*label_size_title);
 	centerbox_row_size->set_end_widget(*label_size_content);
