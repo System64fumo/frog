@@ -155,7 +155,6 @@ void frog::menu_dir_setup() {
 				auto byte_data = bytes->get_data(bytes_size);
 				std::string data = std::string(reinterpret_cast<const char*>(byte_data), bytes_size);
 				data = decode_url(data);
-				std::printf("Data: %s\n", data.c_str());
 
 				std::istringstream stream(data);
 				std::string line;
@@ -167,18 +166,13 @@ void frog::menu_dir_setup() {
 				while (std::getline(stream, line))
 					file_paths.push_back(line.substr(7));
 
-				std::printf("Operation: %s\n", operation.c_str());
 				if (operation == "copy") {
-					file_op_copy(file_paths);
+					file_op(file_paths, current_path, 'm');
 				}
 				else if (operation == "cut") {
-					for (const auto& path : file_paths) {
-						// TODO: Run an optional validation check here to ensure the file was copied properly
-						std::printf("Moving: %s to %s\n", path.string().c_str(), current_path.c_str());
-						std::filesystem::rename(path, current_path / path.filename());
-					}
+					file_op(file_paths, current_path, 't');
+					// TODO: Clean clipboard after this
 				}
-
 			});
 		});
 	});

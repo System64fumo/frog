@@ -99,7 +99,7 @@ class frog : public Gtk::Window {
 		void navigate_to_dir(std::filesystem::path);
 
 		std::string decode_url(const std::string&);
-		void file_op_copy(const std::vector<std::filesystem::path>&);
+		void file_op(const std::vector<std::filesystem::path>&, std::filesystem::path, const char&);
 
 	protected:
 		void snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>&);
