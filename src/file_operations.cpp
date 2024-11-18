@@ -118,6 +118,19 @@ void frog::file_op(const std::vector<std::filesystem::path>& source, std::filesy
 			}
 		}
 
+		// TODO: Check if the source and destination paths are on the same filesystem
+		// This helps unnecessarily copying content.
+
+		// Move (Same filesystem)
+		else if (action == 'v') {
+			try {
+				std::filesystem::rename(src, dest_path);
+			}
+			catch (const std::filesystem::filesystem_error& e) {
+				std::fprintf(stderr, "Error moving %s to %s: %s\n", src.c_str(), dest_path.c_str(), e.what());
+			}
+		}
+
 		// Move (Copy then delete)
 		else if (action == 't') {
 			if (std::filesystem::is_directory(src)) {
