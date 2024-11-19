@@ -48,6 +48,7 @@ window:not(.desktop) {
 
 .place progressbar trough {
 	min-height: 3px;
+	min-width: 0px;
 }
 
 flowboxchild {
