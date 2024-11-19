@@ -46,7 +46,7 @@ frog::frog() {
 		navbar_setup();
 		sidebar_setup();
 
-		box_top.append(button_expand);
+		box_status.append(button_expand);
 		button_expand.get_style_context()->add_class("flat");
 		button_expand.set_icon_name("sidebar-expand");
 		button_expand.set_focusable(false);
@@ -56,7 +56,7 @@ frog::frog() {
 			box_overlay.set_visible(true);
 		});
 
-		box_top.append(entry_path);
+		box_status.append(entry_path);
 		entry_path.get_style_context()->add_class("path_bar");
 		entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_entry_done));
 		entry_path.signal_changed().connect(sigc::mem_fun(*this, &frog::on_entry_changed));
@@ -67,7 +67,7 @@ frog::frog() {
 
 	show();
 
-	box_main.append(box_top);
+	box_main.append(box_status);
 	box_main.get_style_context()->add_class("file_container");
 	box_main.set_hexpand(true);
 	box_main.set_orientation(Gtk::Orientation::VERTICAL);

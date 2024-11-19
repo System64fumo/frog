@@ -42,7 +42,7 @@ class frog : public Gtk::Window {
 		Gtk::Box box_main;
 		Gtk::Revealer revealer_sidebar;
 		Gtk::Box box_sidebar;
-		Gtk::Box box_top;
+		Gtk::Box box_status;
 
 		Gtk::Box box_navigation;
 		Gtk::Button button_previous;
