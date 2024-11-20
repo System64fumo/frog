@@ -15,7 +15,7 @@
 #include <gst/video/video-info.h>
 #include <thread>
 
-file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box(Gtk::Orientation::VERTICAL), label("Loading.."), entry(entry) {
+file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box(Gtk::Orientation::VERTICAL), content_count(0), label("Loading.."), entry(entry) {
 	get_style_context()->add_class("file_entry");
 
 	append(image);
@@ -207,6 +207,8 @@ void file_entry::load_thumbnail() {
 }
 
 void file_entry::load_metadata() {
+	// TODO: Check for permission before loading metadata
+
 	// Filesize
 	if (is_directory) {
 		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
@@ -219,6 +221,13 @@ void file_entry::load_metadata() {
 		file_size = entry.file_size();
 	}
 
+	// TODO: Maybe it would be nice to get the content type instead of general content? (Files/Dirs)
+	// Content
+	if (is_directory) {
+		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
+			content_count++;
+		}
+	}
 	// TODO: Add more metadata stuff (Image size, Video length, Ect..)
 }
 
