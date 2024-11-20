@@ -49,7 +49,6 @@ class frog : public Gtk::Window {
 		Gtk::Button button_next;
 		Gtk::Button button_up;
 		Gtk::Button button_search;
-		Gtk::Button button_expand;
 
 		Gtk::ScrolledWindow scrolled_window_places;
 		Gtk::FlowBox flowbox_places;

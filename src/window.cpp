@@ -46,21 +46,26 @@ frog::frog() {
 		navbar_setup();
 		sidebar_setup();
 
-		box_status.append(button_expand);
-		button_expand.get_style_context()->add_class("flat");
-		button_expand.set_icon_name("sidebar-expand");
-		button_expand.set_focusable(false);
-		button_expand.signal_clicked().connect([&]() {
-			sidebar_should_hide = false;
-			revealer_sidebar.set_reveal_child(true);
-			box_overlay.set_visible(true);
-		});
+		entry_path.set_icon_from_icon_name("sidebar-expand", Gtk::Entry::IconPosition::PRIMARY);
+		entry_path.set_icon_from_icon_name("document-swap-symbolic", Gtk::Entry::IconPosition::SECONDARY);
+		entry_path.get_children()[2]->set_visible(false);
 
 		box_status.append(entry_path);
 		entry_path.get_style_context()->add_class("path_bar");
 		entry_path.signal_activate().connect(sigc::mem_fun(*this, &frog::on_entry_done));
 		entry_path.signal_changed().connect(sigc::mem_fun(*this, &frog::on_entry_changed));
 		entry_path.set_hexpand(true);
+		entry_path.set_activates_default(false);
+		entry_path.signal_icon_press().connect([&](Gtk::Entry::IconPosition pos) {
+			if (pos == Gtk::Entry::IconPosition::PRIMARY) {
+				sidebar_should_hide = false;
+				revealer_sidebar.set_reveal_child(true);
+				box_overlay.set_visible(true);
+			}
+			else {
+				std::printf("Expand file operations menu\n");
+			}
+		}, true);
 
 		switch_layout();
 	}
@@ -446,9 +451,9 @@ void frog::switch_layout() {
 
 		revealer_sidebar.set_reveal_child(true);
 		box_main.set_margin_start(175);
-		button_expand.set_visible(false);
 		box_overlay.set_visible(false);
 		sidebar_should_hide = true;
+		entry_path.get_children()[0]->set_visible(false);
 		revealer_sidebar.get_style_context()->remove_class("mobile");
 		button_dummy.grab_focus();
 	}
@@ -457,9 +462,9 @@ void frog::switch_layout() {
 			return;
 
 		if (sidebar_should_hide) {
+			entry_path.get_children()[0]->set_visible(true);
 			revealer_sidebar.set_reveal_child(false);
 			box_main.set_margin_start(0);
-			button_expand.set_visible(true);
 			button_dummy.grab_focus();
 		}
 		revealer_sidebar.get_style_context()->add_class("mobile");
