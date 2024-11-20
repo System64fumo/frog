@@ -214,6 +214,14 @@ void frog::on_right_clicked(const int &n_press,
 	popovermenu_context_menu.popup();
 }
 
+void add_property(Gtk::Box* container, Gtk::Widget* name, Gtk::Widget* value) {
+	Gtk::CenterBox* centerbox_property= Gtk::make_managed<Gtk::CenterBox>();
+	centerbox_property->get_style_context()->add_class("property");
+	centerbox_property->set_start_widget(*name);
+	centerbox_property->set_end_widget(*value);
+	container->append(*centerbox_property);
+}
+
 void frog::create_properties_dialog(file_entry* f_entry) {
 	// TODO: Lazy load metadata
 	f_entry->load_metadata();
@@ -253,16 +261,15 @@ void frog::create_properties_dialog(file_entry* f_entry) {
 	box_details->set_halign(Gtk::Align::CENTER);
 	box_details->set_valign(Gtk::Align::START);
 
-	// TODO: Add size conversion (Bytes, KBytes, MBytes, GBytes, Ect..)
-	Gtk::CenterBox* centerbox_row_size = Gtk::make_managed<Gtk::CenterBox>();
-	centerbox_row_size->get_style_context()->add_class("property");
 	Gtk::Label* label_size_title = Gtk::make_managed<Gtk::Label>("Size");
 	Gtk::Label* label_size_content = Gtk::make_managed<Gtk::Label>(to_human_readable(f_entry->file_size));
-	
-	centerbox_row_size->set_start_widget(*label_size_title);
-	centerbox_row_size->set_end_widget(*label_size_content);
+	add_property(box_details, label_size_title, label_size_content);
 
-	box_details->append(*centerbox_row_size);
+	if (f_entry->is_directory) {
+		Gtk::Label* label_size_title = Gtk::make_managed<Gtk::Label>("Content");
+		Gtk::Label* label_size_content = Gtk::make_managed<Gtk::Label>(std::to_string(f_entry->content_count));
+		add_property(box_details, label_size_title, label_size_content);
+	}
 
 	box_content->append(*box_details);
 	dialog->show();
