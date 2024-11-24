@@ -2,6 +2,8 @@
 #include "icons.hpp"
 #include "xdg_dirs.hpp"
 
+#include "window.hpp"
+
 #include <gtkmm/droptarget.h>
 #include <gtkmm/stack.h>
 #include <gtkmm/label.h>
@@ -15,7 +17,7 @@
 #include <gst/video/video-info.h>
 #include <thread>
 
-file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box(Gtk::Orientation::VERTICAL), content_count(0), label("Loading.."), entry(entry) {
+file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry) : Gtk::Box(Gtk::Orientation::VERTICAL), win(win), file_size(0), content_count(0), label("Loading.."), entry(entry) {
 	get_style_context()->add_class("file_entry");
 
 	append(image);
@@ -45,7 +47,6 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box
 		}
 	});
 
-	file_size = 0;
 	is_directory = entry.is_directory();
 	file_icon = entry.is_directory() ? "default-folder" : "application-blank";
 	image.set_from_icon_name(file_icon);
@@ -55,6 +56,7 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box
 	source->set_actions(Gdk::DragAction::MOVE);
 
 	source->signal_prepare().connect([&](const double &x, const double &y) {
+		source->set_icon(image.get_paintable(), icon_size / 2, icon_size / 2);
 		auto flowbox = dynamic_cast<Gtk::FlowBox*>(get_parent()->get_parent());
 		auto selected_entries = flowbox->get_selected_children();
 		std::vector<GFile*> files;
@@ -72,7 +74,7 @@ file_entry::file_entry(const std::filesystem::directory_entry &entry) : Gtk::Box
 			g_object_unref(file);
 		}
 
-		GdkContentProvider *contentProvider;
+		GdkContentProvider* contentProvider;
 		contentProvider = gdk_content_provider_new_typed(GDK_TYPE_FILE_LIST, file_list);
 
 		return Glib::wrap(contentProvider);
@@ -110,12 +112,12 @@ void file_entry::load_data() {
 		setup_drop_target();
 	}
 	else {
-		size_t last_dot_pos = file_name.rfind('.');
+		const size_t& last_dot_pos = file_name.rfind('.');
 		if (last_dot_pos != std::string::npos) {
 			extension = file_name.substr(last_dot_pos + 1);
 			std::transform(extension.begin(), extension.end(), extension.begin(),
 				[](unsigned char c) { return std::tolower(c); });
-			std::string extension_icon = icon_from_extension[extension];
+			const std::string& extension_icon = icon_from_extension[extension];
 			if (!extension_icon.empty())
 				file_icon = icon_from_extension[extension];
 			else
@@ -131,13 +133,11 @@ void file_entry::load_data() {
 	// Also uses a lot of ram per instance
 
 	// Load icons
-	auto icon_theme = Gtk::IconTheme::get_for_display(Gdk::Display::get_default());
-	auto icon_info = icon_theme->lookup_icon(file_icon, icon_size);
+	auto icon_info = win->icon_theme->lookup_icon(file_icon, icon_size);
 	auto file = icon_info->get_file();
 	auto icon = Gdk::Texture::create_from_file(file);
 
 	image.set(icon);
-	source->set_icon(icon, icon_size / 2, icon_size / 2);
 	icon.reset();
 }
 

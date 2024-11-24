@@ -11,18 +11,22 @@
 #include <gtkmm/entry.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/gestureclick.h>
+#include <gtkmm/icontheme.h>
 #include <giomm/menu.h>
 #include <giomm/simpleactiongroup.h>
+#include <filesystem>
 #include <atomic>
 #include <future>
 
 #include "dir_watcher.hpp"
 #include "xdg_dirs.hpp"
-#include "file.hpp"
+
+class file_entry;
 
 class frog : public Gtk::Window {
 	public:
 		frog();
+		Glib::RefPtr<Gtk::IconTheme> icon_theme;
 
 	private:
 		// TODO: This is starting to get rather long here.
