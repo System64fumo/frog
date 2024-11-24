@@ -1,10 +1,10 @@
 #pragma once
-#include "disk.hpp"
-
 #include <gtkmm/box.h>
 #include <gtkmm/image.h>
 #include <gtkmm/label.h>
 #include <gtkmm/progressbar.h>
+
+#include "disk.hpp"
 
 class place : public Gtk::Box {
 	public:

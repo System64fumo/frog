@@ -18,9 +18,7 @@
 #include <atomic>
 #include <future>
 
-#include "dir_watcher.hpp"
-#include "xdg_dirs.hpp"
-
+class directory_watcher;
 class file_entry;
 
 class frog : public Gtk::Window {

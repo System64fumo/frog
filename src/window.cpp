@@ -3,17 +3,18 @@
 #include "place.hpp"
 #include "css.hpp"
 #include "file.hpp"
-#include "config_parser.hpp"
 #include "icons.hpp"
 #include "disk.hpp"
 #include "utils.hpp"
+#include "xdg_dirs.hpp"
+#include "dir_watcher.hpp"
+#include "config_parser.hpp"
 
 #include <gtk4-layer-shell.h>
 #include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/separator.h>
 #include <gtkmm/droptarget.h>
 #include <gdkmm/clipboard.h>
-#include <glibmm/bytes.h>
 #include <glibmm/vectorutils.h>
 
 frog::frog() {

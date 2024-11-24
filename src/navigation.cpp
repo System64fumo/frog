@@ -1,6 +1,7 @@
 #include "window.hpp"
 #include "place.hpp"
 #include "file.hpp"
+#include "dir_watcher.hpp"
 
 #include <gtkmm/adjustment.h>
 
