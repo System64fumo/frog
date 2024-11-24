@@ -187,7 +187,7 @@ void frog::menu_dir_setup() {
 		}
 		else {
 			std::filesystem::directory_entry entry(current_path);
-			f_entry = Gtk::make_managed<file_entry>(entry);
+			f_entry = Gtk::make_managed<file_entry>(this, entry);
 		}
 		create_properties_dialog(f_entry);
 	});

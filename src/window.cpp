@@ -2,6 +2,7 @@
 #include "window.hpp"
 #include "place.hpp"
 #include "css.hpp"
+#include "file.hpp"
 #include "config_parser.hpp"
 #include "icons.hpp"
 #include "disk.hpp"
@@ -20,6 +21,7 @@ frog::frog() {
 	set_default_size(800, 400);
 	set_child(overlay_main);
 	overlay_main.set_child(box_main);
+	icon_theme = Gtk::IconTheme::get_for_display(Gdk::Display::get_default());
 
 	get_xdg_user_dirs();
 	load_icon_map();
@@ -412,7 +414,7 @@ void frog::on_dispatcher_file_change() {
 }
 
 void frog::create_file_entry(const std::filesystem::directory_entry &entry, const bool& load_thumbnail) {
-	file_entry *f_entry = Gtk::make_managed<file_entry>(entry);
+	file_entry *f_entry = Gtk::make_managed<file_entry>(this, entry);
 	Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
 
 	fbox_child->set_size_request(96,110);

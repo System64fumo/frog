@@ -6,10 +6,13 @@
 #include <gtkmm/dragsource.h>
 #include <filesystem>
 
+class frog;
+
 class file_entry : public Gtk::Box {
 	public:
-		file_entry(const std::filesystem::directory_entry&);
+		file_entry(frog*, const std::filesystem::directory_entry&);
 		~file_entry();
+		frog* win;
 
 		std::string path;
 		bool is_directory;
