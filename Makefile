@@ -9,7 +9,7 @@ DATADIR ?= $(PREFIX)/share
 BUILDDIR = build
 
 CXXFLAGS += -Oz -s -Wall -flto -std=c++20
-CXXFLAGS += $(shell pkg-config --cflags $(PKGS))
+CXXFLAGS += $(shell pkg-config --cflags $(PKGS)) -I "include"
 LDFLAGS += $(shell pkg-config --libs $(PKGS)) -Wl,--gc-sections
 
 $(shell mkdir -p $(BUILDDIR))
@@ -36,6 +36,7 @@ $(BUILDDIR)/%.o: src/%.cpp
 install: $(BINS)
 	@echo "Installing..."
 	@install -D -t $(DESTDIR)$(BINDIR) $(BUILDDIR)/$(BINS)
+	@install -D -t $(DESTDIR)$(DATADIR)/sys64/frog config.conf style.css
 	@install -D -t $(DESTDIR)$(DATADIR)/applications data/frog.desktop
 	@install -D -t $(DESTDIR)$(DATADIR)/pixmaps data/frog.png
 

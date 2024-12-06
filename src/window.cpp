@@ -1,7 +1,6 @@
 #include "main.hpp"
 #include "window.hpp"
 #include "place.hpp"
-#include "css.hpp"
 #include "file.hpp"
 #include "icons.hpp"
 #include "disk.hpp"
@@ -16,6 +15,7 @@
 #include <gtkmm/droptarget.h>
 #include <gdkmm/clipboard.h>
 #include <glibmm/vectorutils.h>
+#include <gtkmm/cssprovider.h>
 
 frog::frog() {
 	set_title("Frog");
@@ -174,10 +174,21 @@ frog::frog() {
 	entry_path.set_text(start_path);
 	on_entry_done();
 
-	// Load custom css
-	std::string home_dir = getenv("HOME");
-	std::string css_path = home_dir + "/.config/sys64/frog.css";
-	css_loader css(css_path, this);
+	const std::string& style_path = "/usr/share/sys64/frog/style.css";
+	const std::string& style_path_usr = std::string(getenv("HOME")) + "/.config/sys64/frog/style.css";
+
+	// Load base style
+	if (std::filesystem::exists(style_path)) {
+		auto css = Gtk::CssProvider::create();
+		css->load_from_path(style_path);
+		get_style_context()->add_provider_for_display(property_display(), css, GTK_STYLE_PROVIDER_PRIORITY_USER);
+	}
+	// Load user style
+	if (std::filesystem::exists(style_path_usr)) {
+		auto css = Gtk::CssProvider::create();
+		css->load_from_path(style_path_usr);
+		get_style_context()->add_provider_for_display(property_display(), css, GTK_STYLE_PROVIDER_PRIORITY_USER);
+	}
 }
 
 void frog::navbar_setup() {
@@ -249,7 +260,7 @@ void frog::sidebar_setup() {
 
 	// Pinned items
 	flowbox_places.signal_child_activated().connect(sigc::mem_fun(*this, &frog::on_places_child_activated));
-	config_parser config(std::string(getenv("HOME")) + "/.config/sys64/frog.conf");
+	config_parser config(std::string(getenv("HOME")) + "/.config/sys64/frog/config.conf");
 	std::vector<std::string> keys = config.get_keys("pinned");
 
 	for (const auto &key : keys) {
