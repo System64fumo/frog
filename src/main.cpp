@@ -2,7 +2,10 @@
 #include "window.hpp"
 
 int main(int argc, char* argv[]) {
-	app = Gtk::Application::create("funky.sys64.frog", Gio::Application::Flags::HANDLES_OPEN);
+	app = Gtk::Application::create(
+		"funky.sys64.frog",
+		Gio::Application::Flags::HANDLES_OPEN |
+		Gio::Application::Flags::NON_UNIQUE);
 
 	while (true) {
 		switch (getopt(argc, argv, "dh")) {
