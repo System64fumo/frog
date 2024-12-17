@@ -10,6 +10,8 @@
 
 class disk_manager {
 	public:
+		disk_manager();
+
 		struct partition {
 			std::string name;
 			std::string label;

@@ -5,6 +5,36 @@
 #include <sys/statvfs.h>
 #include <libudev.h>
 #include <fstream>
+#include <thread>
+
+disk_manager::disk_manager() {
+	std::thread([&]() {
+		struct udev *udev = udev_new();
+		struct udev_monitor *mon = udev_monitor_new_from_netlink(udev, "udev");
+		udev_monitor_filter_add_match_subsystem_devtype(mon, "block", nullptr);
+		udev_monitor_enable_receiving(mon);
+		int fd = udev_monitor_get_fd(mon);
+		while (true) {
+			fd_set fds;
+			FD_ZERO(&fds);
+			FD_SET(fd, &fds);
+			int ret = select(fd + 1, &fds, nullptr, nullptr, nullptr);
+			if (ret > 0 && FD_ISSET(fd, &fds)) {
+				struct udev_device *dev = udev_monitor_receive_device(mon);
+				std::string action = udev_device_get_action(dev) ? udev_device_get_action(dev) : "unknown";
+				std::string devnode = udev_device_get_devnode(dev) ? udev_device_get_devnode(dev) : "unknown";
+				std::string subsystem = udev_device_get_subsystem(dev) ? udev_device_get_subsystem(dev) : "unknown";
+
+				// TODO: Do something with this
+				if (subsystem == "block") {
+					//std::printf("Device event\n");
+				}
+
+				udev_device_unref(dev);
+			}
+		}
+	}).detach();
+}
 
 std::vector<disk_manager::disk> disk_manager::get_disks() {
 	auto fstab = get_fstab();
