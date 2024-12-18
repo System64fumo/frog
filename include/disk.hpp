@@ -31,7 +31,8 @@ class disk_manager {
 			std::vector<partition> partitions;
 		};
 
-		std::vector<disk> get_disks();
+		std::vector<disk_manager::disk> disks;
+		void get_disks();
 		void get_disks_udisks();
 
 	private:
