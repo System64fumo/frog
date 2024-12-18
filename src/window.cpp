@@ -276,8 +276,7 @@ void frog::sidebar_setup() {
 	// TODO: Remove all of the verbose output
 	// And maybe consider adding tooltips to places
 	disk_manager* dm = new disk_manager();
-	auto disks = dm->get_disks();
-	for (const auto& disk : disks) {
+	for (const auto& disk : dm->disks) {
 		for (const auto& partition : disk.partitions) {
 			if (!partition.should_show)
 				continue;

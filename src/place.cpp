@@ -14,9 +14,9 @@ place::place(std::string label_str, std::string path_str, std::string custom_ico
 	if (part) {
 		is_disk = true;
 		this->part = *part;
-		const double used_percentage = (double)part->used_bytes / (double)part->total_bytes;
 
-		if (used_percentage != 0) {
+		if (part->used_bytes != 0) {
+			const double used_percentage = (double)part->used_bytes / (double)part->total_bytes;
 			Gtk::Box *box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
 			progressbar_size.set_fraction(used_percentage);
 			progressbar_size.set_margin_top(5);

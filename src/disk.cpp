@@ -8,6 +8,8 @@
 #include <thread>
 
 disk_manager::disk_manager() {
+	get_disks();
+
 	std::thread([&]() {
 		struct udev *udev = udev_new();
 		struct udev_monitor *mon = udev_monitor_new_from_netlink(udev, "udev");
@@ -36,10 +38,9 @@ disk_manager::disk_manager() {
 	}).detach();
 }
 
-std::vector<disk_manager::disk> disk_manager::get_disks() {
+void disk_manager::get_disks() {
 	auto fstab = get_fstab();
 	std::map<std::string, std::string> mounts = get_mounts();
-	std::vector<disk> disks;
 
 	for (const auto& entry : std::filesystem::directory_iterator("/sys/block/")) {
 		std::string disk_name = entry.path().filename();
@@ -213,7 +214,6 @@ std::vector<disk_manager::disk> disk_manager::get_disks() {
 		new_disk.partitions.push_back(new_partition);
 		disks.push_back(new_disk);
 	}
-	return disks;
 }
 
 void disk_manager::get_disks_udisks() {
