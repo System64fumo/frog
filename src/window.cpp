@@ -451,7 +451,7 @@ void frog::create_file_entry(const std::filesystem::directory_entry &entry, cons
 void frog::snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>& snapshot) {
 	Glib::signal_idle().connect([&]() {
 		switch_layout();
-		return true;
+		return false;
 	});
 
 	// Render normally
