@@ -1,4 +1,5 @@
 #include "place.hpp"
+#include "utils.hpp"
 #include "xdg_dirs.hpp"
 
 place::place(std::string label_str, std::string path_str, std::string custom_icon, const std::optional<disk_manager::partition>& part) {
@@ -24,14 +25,18 @@ place::place(std::string label_str, std::string path_str, std::string custom_ico
 			box->set_hexpand(true);
 			box->append(label);
 			box->append(progressbar_size);
+			set_tooltip_text(to_human_readable(part->used_bytes) + " / " + to_human_readable(part->total_bytes));
 		}
 		else {
 			append(label);
 			file_path = "";
+			set_tooltip_text(part->name);
 		}
 	}
-	else
+	else {
 		append(label);
+		set_tooltip_text(path_str);
+	}
 
 	if (custom_icon != "") {
 		image.set_from_icon_name(custom_icon);

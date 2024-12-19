@@ -3,15 +3,18 @@
 
 #include <blkid/blkid.h>
 #include <sys/statvfs.h>
-#include <libudev.h>
 #include <fstream>
 #include <thread>
 
 disk_manager::disk_manager() {
+	udev = udev_new();
+	enumerate = udev_enumerate_new(udev);
+	udev_enumerate_add_match_subsystem(enumerate, "block");
+	udev_enumerate_scan_devices(enumerate);
+	devices = udev_enumerate_get_list_entry(enumerate);
 	get_disks();
 
 	std::thread([&]() {
-		struct udev *udev = udev_new();
 		struct udev_monitor *mon = udev_monitor_new_from_netlink(udev, "udev");
 		udev_monitor_filter_add_match_subsystem_devtype(mon, "block", nullptr);
 		udev_monitor_enable_receiving(mon);
@@ -36,6 +39,11 @@ disk_manager::disk_manager() {
 			}
 		}
 	}).detach();
+}
+
+disk_manager::~disk_manager() {
+	udev_enumerate_unref(enumerate);
+	udev_unref(udev);
 }
 
 void disk_manager::get_disks() {
@@ -122,57 +130,6 @@ void disk_manager::get_disks() {
 	}
 }
 
-void disk_manager::get_disks_udisks() {
-	proxy = Gio::DBus::Proxy::create_sync(
-		Gio::DBus::Connection::get_sync(Gio::DBus::BusType::SYSTEM),
-		"org.freedesktop.UDisks2",
-		"/org/freedesktop/UDisks2",
-		"org.freedesktop.DBus.ObjectManager");
-
-	std::vector<Glib::VariantBase> args_vector;
-	auto args = Glib::VariantContainerBase::create_tuple(args_vector);
-	auto result = proxy->call_sync("GetManagedObjects", args);
-	auto result_cb = Glib::VariantBase::cast_dynamic<Glib::VariantContainerBase>(result);
-	auto result_base = result_cb.get_child(0);
-	extract_data(result_base);
-}
-
-void disk_manager::extract_data(const Glib::VariantBase& variant_base) {
-	auto variant = Glib::VariantBase::cast_dynamic<Glib::Variant<std::map<Glib::DBusObjectPathString, std::map<Glib::ustring, std::map<Glib::ustring, Glib::VariantBase>>>>>(variant_base);
-	auto data_map = variant.get();
-
-	for (const auto& [object_path, interface_map] : data_map) {
-		std::string device_path;
-		std::string mount_path;
-		std::string type;
-
-		for (const auto& [interface_name, property_map] : interface_map) {
-				if (interface_name == "org.freedesktop.UDisks2.Block") {
-					for (const auto& [property_name, value] : property_map) {
-						if (property_name == "Device")
-							device_path = value.print();
-						else if (property_name == "IdType")
-							type = value.print();
-					}
-				}
-
-				if (interface_name == "org.freedesktop.UDisks2.Filesystem") {
-					for (const auto& [property_name, value] : property_map) {
-						if (property_name == "MountPoints")
-							mount_path = value.print();
-					}
-				}
-			}
-
-			// Filter out unmountable devices
-			if (!device_path.empty() && type != "''") {
-				std::printf("Device: %s\n", device_path.c_str());
-				std::printf("Mounted on: %s\n", mount_path.c_str());
-				std::printf("Type: %s\n", type.c_str());
-			}
-	}
-}
-
 void disk_manager::get_fstab() {
 	std::ifstream fstab_file("/etc/fstab");
 
@@ -229,14 +186,8 @@ disk_manager::disk disk_manager::create_disk(const std::string& devnode) {
 	}
 
 	// Get disk model
-	// TODO: This could be cached and used less often
-	// This could also be simplified
+	// This could be simplified
 	new_disk.model = "Unknown model";
-	struct udev *udev = udev_new();
-	struct udev_enumerate *enumerate = udev_enumerate_new(udev);
-	udev_enumerate_add_match_subsystem(enumerate, "block");
-	udev_enumerate_scan_devices(enumerate);
-	struct udev_list_entry *devices = udev_enumerate_get_list_entry(enumerate);
 
 	// Iterate through devices
 	for (struct udev_list_entry *dev_list_entry = devices; dev_list_entry;
@@ -258,8 +209,6 @@ disk_manager::disk disk_manager::create_disk(const std::string& devnode) {
 		udev_device_unref(dev);
 	}
 
-	udev_enumerate_unref(enumerate);
-	udev_unref(udev);
 	return new_disk;
 }
 
