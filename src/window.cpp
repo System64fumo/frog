@@ -283,9 +283,6 @@ void frog::sidebar_setup() {
 
 			const std::string icon = disk.removable ? "drive-removable-media-usb-symbolic" : "drive-harddisk-symbolic";
 			place *place_entry = Gtk::make_managed<place>(partition.label, partition.mount_path, icon, partition);
-			if (!partition.mount_path.empty()) {
-				place_entry->set_tooltip_text(to_human_readable(partition.used_bytes) + "/" + to_human_readable(partition.total_bytes));
-			}
 			flowbox_places.append(*place_entry);
 		}
 	}
