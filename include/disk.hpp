@@ -45,6 +45,7 @@ class disk_manager {
 		std::map<std::string, std::vector<std::string>> fstab;
 		std::map<std::string, std::string> mounts;
 
+		void on_disk_event(const std::string&, const bool&);
 		void get_fstab();
 		void get_mounts();
 		void get_disks();
