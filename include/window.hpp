@@ -81,6 +81,7 @@ class frog : public Gtk::Window {
 
 		int sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2);
 		void on_dispatcher_file_change();
+		void on_dispatcher_disks_changed();
 		void on_filebox_child_activated(Gtk::FlowBoxChild* child);
 		void on_places_child_activated(Gtk::FlowBoxChild* child);
 		void on_right_clicked(const int &n_press, const double &x, const double &y, Gtk::FlowBoxChild *flowbox_child);

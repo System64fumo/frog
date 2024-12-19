@@ -25,15 +25,13 @@ disk_manager::disk_manager() {
 			FD_SET(fd, &fds);
 			int ret = select(fd + 1, &fds, nullptr, nullptr, nullptr);
 			if (ret > 0 && FD_ISSET(fd, &fds)) {
-				struct udev_device *dev = udev_monitor_receive_device(mon);
-				std::string action = udev_device_get_action(dev) ? udev_device_get_action(dev) : "unknown";
-				std::string devnode = udev_device_get_devnode(dev) ? udev_device_get_devnode(dev) : "unknown";
-				std::string subsystem = udev_device_get_subsystem(dev) ? udev_device_get_subsystem(dev) : "unknown";
+				struct udev_device* dev = udev_monitor_receive_device(mon);
+				std::string action = udev_device_get_action(dev);
+				std::string devnode = udev_device_get_devnode(dev);
+				std::string subsystem = udev_device_get_subsystem(dev);
 
-				// TODO: Do something with this
-				if (subsystem == "block") {
-					//std::printf("Device event\n");
-				}
+				if (subsystem == "block")
+					on_disk_event(devnode.substr(5), (action == "add"));
 
 				udev_device_unref(dev);
 			}
@@ -171,6 +169,41 @@ void disk_manager::get_mounts() {
 
 		mounts[device] = mount_point;
 	}
+}
+
+void disk_manager::on_disk_event(const std::string& devnode, const bool& add) {
+	std::string parent_dev;
+	if (!devnode.find("sd"))
+		parent_dev = devnode.substr(0, 3);
+	else if (!devnode.find("mmcblk"))
+		parent_dev = devnode.substr(0, 7);
+	else if (!devnode.find("nvme"))
+		parent_dev = devnode.substr(0, 7);
+
+	bool is_partition = (devnode != parent_dev);
+
+	if (is_partition) {
+		// TODO: Add partition code
+	}
+	else {
+		bool found_disk = false;
+		for (std::size_t i = 0; i < disks.size();) {
+			if (disks[i].name == devnode) {
+				found_disk = true;
+				if (!add) {
+					disks.erase(disks.begin() + i);
+				}
+			}
+			else {
+				++i;
+			}
+		}
+		if (!found_disk && add) {
+			disks.push_back(create_disk(devnode));
+		}
+	}
+
+	dispatcher_on_changed.emit();
 }
 
 disk_manager::disk disk_manager::create_disk(const std::string& devnode) {

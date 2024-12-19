@@ -286,6 +286,7 @@ void frog::sidebar_setup() {
 			flowbox_places.append(*place_entry);
 		}
 	}
+	dm->dispatcher_on_changed.connect(sigc::mem_fun(*this, &frog::on_dispatcher_disks_changed));
 }
 
 bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::ModifierType &state) {
@@ -419,6 +420,10 @@ void frog::on_dispatcher_file_change() {
 		navigate_to_dir(current_path);
 		current_path = "";
 	}
+}
+
+void frog::on_dispatcher_disks_changed() {
+	std::printf("Disks changed\n");
 }
 
 void frog::create_file_entry(const std::filesystem::directory_entry &entry, const bool& load_thumbnail) {
