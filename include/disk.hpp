@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <map>
 
+#include <glibmm/dispatcher.h>
 #include <giomm/dbusconnection.h>
 #include <giomm/dbusproxy.h>
 
@@ -32,13 +33,20 @@ class disk_manager {
 		};
 
 		std::vector<disk_manager::disk> disks;
-		void get_disks();
-		void get_disks_udisks();
+		Glib::Dispatcher dispatcher_on_changed;
 
 	private:
 		Glib::RefPtr<Gio::DBus::Proxy> proxy;
 
-		std::map<std::string, std::vector<std::string>> get_fstab();
-		std::map<std::string, std::string> get_mounts();
+		std::map<std::string, std::vector<std::string>> fstab;
+		std::map<std::string, std::string> mounts;
+
 		void extract_data(const Glib::VariantBase& variant_base);
+		void get_fstab();
+		void get_mounts();
+		void get_disks();
+		void get_disks_udisks();
+
+		disk create_disk(const std::string&);
+		partition create_partition(const std::string&);
 };

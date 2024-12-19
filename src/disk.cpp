@@ -39,8 +39,8 @@ disk_manager::disk_manager() {
 }
 
 void disk_manager::get_disks() {
-	auto fstab = get_fstab();
-	std::map<std::string, std::string> mounts = get_mounts();
+	get_fstab();
+	get_mounts();
 
 	for (const auto& entry : std::filesystem::directory_iterator("/sys/block/")) {
 		std::string disk_name = entry.path().filename();
@@ -50,49 +50,7 @@ void disk_manager::get_disks() {
 			disk_name.find("ram") != std::string::npos)
 			continue;
 
-		disk new_disk;
-		new_disk.name = disk_name;
-
-		// Check if the disk is removable
-		std::ifstream file("/sys/block/" + new_disk.name + "/removable");
-		std::string line;
-		if (file.is_open()) {
-			std::getline(file, line);
-			new_disk.removable = line == "1";
-		}
-
-		// Get disk model
-		// TODO: This could be cached and used less often
-		// This could also be simplified
-		new_disk.model = "Unknown model";
-		struct udev *udev = udev_new();
-		struct udev_enumerate *enumerate = udev_enumerate_new(udev);
-		udev_enumerate_add_match_subsystem(enumerate, "block");
-		udev_enumerate_scan_devices(enumerate);
-		struct udev_list_entry *devices = udev_enumerate_get_list_entry(enumerate);
-
-		// Iterate through devices
-		for (struct udev_list_entry *dev_list_entry = devices; dev_list_entry;
-			dev_list_entry = udev_list_entry_get_next(dev_list_entry)) {
-
-			const char *path = udev_list_entry_get_name(dev_list_entry);
-			std::string p = path;
-
-			if (p.substr(p.size() - new_disk.name.size()) != new_disk.name)
-				continue;
-
-			struct udev_device *dev = udev_device_new_from_syspath(udev, path);
-
-			const char *model = udev_device_get_property_value(dev, "ID_MODEL");
-			if (model == nullptr)
-				continue;
-
-			new_disk.model = model;
-			udev_device_unref(dev);
-		}
-
-		udev_enumerate_unref(enumerate);
-		udev_unref(udev);
+		disk new_disk = create_disk(disk_name);
 
 		// Itterate over the disk's partitions
 		for (const auto& partition_entry : std::filesystem::directory_iterator(entry)) {
@@ -102,59 +60,7 @@ void disk_manager::get_disks() {
 			if (partition_name.find(disk_name))
 				continue;
 
-			partition new_partition;
-			new_partition.name = partition_name;
-			new_partition.mount_path = mounts[new_partition.name];
-			new_partition.should_show = true;
-			if (fstab.find(partition_name) != fstab.end()) {
-				new_partition.should_show = (fstab[partition_name][3].find("x-gvfs-show") != std::string::npos);
-			}
-
-			// Check if the partition is encrypted
-			for (const auto& entry : std::filesystem::directory_iterator("/sys/block/" + new_disk.name + "/" + new_partition.name + "/holders")) {
-				if (std::filesystem::is_directory(entry)) {
-					std::ifstream file(entry.path().string() + "/dm/name");
-					std::stringstream buffer;
-					buffer << file.rdbuf();
-					new_partition.holder = "mapper/" + buffer.str().substr(0, buffer.str().size() - 1);
-					new_partition.mount_path = mounts[new_partition.holder];
-				}
-			}
-
-			bool mounted = !new_partition.mount_path.empty();
-
-			blkid_probe pr = blkid_new_probe_from_filename(("/dev/" + new_partition.name).c_str());
-			if (!pr)
-				continue;
-
-			blkid_probe_enable_partitions(pr, true);
-			blkid_probe_set_superblocks_flags(pr, BLKID_SUBLKS_TYPE | BLKID_SUBLKS_LABEL);
-			blkid_do_fullprobe(pr);
-
-			const char* pl = nullptr;
-			blkid_probe_lookup_value(pr, "LABEL", &pl, nullptr);
-			new_partition.label = (pl != nullptr) ? std::string(pl) : new_disk.model;
-
-			const char* pt = nullptr;
-			blkid_probe_lookup_value(pr, "TYPE", &pt, nullptr);
-			new_partition.type = (pt != nullptr) ? std::string(pt) : "Unknown Type";
-
-			// Cleanup
-			blkid_free_probe(pr);
-
-			new_partition.used_bytes = 0;
-			new_partition.free_bytes = 0;
-			new_partition.used_bytes = 0;
-			if (mounted) {
-				struct statvfs stats;
-				if (!new_partition.holder.empty())
-					statvfs(mounts[new_partition.holder].c_str(), &stats);
-				else
-					statvfs(mounts[new_partition.name].c_str(), &stats);
-				new_partition.total_bytes = stats.f_blocks * stats.f_frsize;
-				new_partition.free_bytes = stats.f_bfree * stats.f_frsize;
-				new_partition.used_bytes = new_partition.total_bytes - new_partition.free_bytes;
-			}
+			partition new_partition = create_partition(partition_name);
 
 			new_disk.partitions.push_back(new_partition);
 		}
@@ -267,13 +173,12 @@ void disk_manager::extract_data(const Glib::VariantBase& variant_base) {
 	}
 }
 
-std::map<std::string, std::vector<std::string>> disk_manager::get_fstab() {
-	std::ifstream fstab("/etc/fstab");
+void disk_manager::get_fstab() {
+	std::ifstream fstab_file("/etc/fstab");
 
 	std::string line;
-	std::map<std::string, std::vector<std::string>> fstab_map;
 
-	while (std::getline(fstab, line)) {
+	while (std::getline(fstab_file, line)) {
 		if (line.empty() || line[0] == '#')
 			continue;
 
@@ -291,26 +196,135 @@ std::map<std::string, std::vector<std::string>> disk_manager::get_fstab() {
 			fstab_entry.push_back(token);
 		}
 
-		fstab_map[fstab_entry[0]] = fstab_entry;
+		fstab[fstab_entry[0]] = fstab_entry;
 	}
 
-	fstab.close();
-	return fstab_map;
+	fstab_file.close();
 }
 
-std::map<std::string, std::string> disk_manager::get_mounts() {
-	std::map<std::string, std::string> mounted_partitions;
-	std::ifstream mounts("/proc/mounts");
+void disk_manager::get_mounts() {
+	std::ifstream mounts_file("/proc/mounts");
 	std::string device, mount_point, rest;
 
-	while (mounts >> device >> mount_point) {
-		std::getline(mounts, rest); // Skip the rest of the line
+	while (mounts_file >> device >> mount_point) {
+		std::getline(mounts_file, rest); // Skip the rest of the line
 		const std::string prefix = "/dev/";
 		if (device.compare(0, prefix.size(), prefix) == 0)
 			device.erase(0, prefix.size());
 
-		mounted_partitions[device] = mount_point;
+		mounts[device] = mount_point;
+	}
+}
+
+disk_manager::disk disk_manager::create_disk(const std::string& devnode) {
+	disk new_disk;
+	new_disk.name = devnode;
+
+	// Check if the disk is removable
+	std::ifstream file("/sys/block/" + new_disk.name + "/removable");
+	std::string line;
+	if (file.is_open()) {
+		std::getline(file, line);
+		new_disk.removable = line == "1";
 	}
 
-	return mounted_partitions;
+	// Get disk model
+	// TODO: This could be cached and used less often
+	// This could also be simplified
+	new_disk.model = "Unknown model";
+	struct udev *udev = udev_new();
+	struct udev_enumerate *enumerate = udev_enumerate_new(udev);
+	udev_enumerate_add_match_subsystem(enumerate, "block");
+	udev_enumerate_scan_devices(enumerate);
+	struct udev_list_entry *devices = udev_enumerate_get_list_entry(enumerate);
+
+	// Iterate through devices
+	for (struct udev_list_entry *dev_list_entry = devices; dev_list_entry;
+		dev_list_entry = udev_list_entry_get_next(dev_list_entry)) {
+
+		const char *path = udev_list_entry_get_name(dev_list_entry);
+		std::string p = path;
+
+		if (p.substr(p.size() - new_disk.name.size()) != new_disk.name)
+			continue;
+
+		struct udev_device *dev = udev_device_new_from_syspath(udev, path);
+
+		const char *model = udev_device_get_property_value(dev, "ID_MODEL");
+		if (model == nullptr)
+			continue;
+
+		new_disk.model = model;
+		udev_device_unref(dev);
+	}
+
+	udev_enumerate_unref(enumerate);
+	udev_unref(udev);
+	return new_disk;
+}
+
+disk_manager::partition disk_manager::create_partition(const std::string& devnode) {
+	partition new_partition;
+	new_partition.name = devnode;
+	new_partition.should_show = true;
+	if (fstab.find(new_partition.name) != fstab.end()) {
+		new_partition.should_show = (fstab[new_partition.name][3].find("x-gvfs-show") != std::string::npos);
+	}
+
+	// Get parent
+	// TODO: This could probably be better by matching the first 2 letters and itterating over every disk
+	std::string parent_dev;
+	if (!new_partition.name.find("sd"))
+		parent_dev = new_partition.name.substr(0, 3);
+	else if (!new_partition.name.find("mmcblk"))
+		parent_dev = new_partition.name.substr(0, 6);
+	else if (!new_partition.name.find("nvme"))
+		parent_dev = new_partition.name.substr(0, 4);
+
+	// Check if the partition is encrypted
+	for (const auto& entry : std::filesystem::directory_iterator("/sys/block/" + parent_dev + "/" + new_partition.name + "/holders")) {
+		if (std::filesystem::is_directory(entry)) {
+			std::ifstream file(entry.path().string() + "/dm/name");
+			std::stringstream buffer;
+			buffer << file.rdbuf();
+			new_partition.name = "mapper/" + buffer.str().substr(0, buffer.str().size() - 1);
+		}
+	}
+	new_partition.mount_path = mounts[new_partition.name];
+
+	bool mounted = !new_partition.mount_path.empty();
+	blkid_probe pr = blkid_new_probe_from_filename(("/dev/" + new_partition.name).c_str());
+
+	blkid_probe_enable_partitions(pr, true);
+	blkid_probe_set_superblocks_flags(pr, BLKID_SUBLKS_TYPE | BLKID_SUBLKS_LABEL);
+	blkid_do_fullprobe(pr);
+
+	const char* pl = nullptr;
+	blkid_probe_lookup_value(pr, "LABEL", &pl, nullptr);
+	new_partition.label = (pl != nullptr) ? std::string(pl) : "Unknown";
+
+	const char* pt = nullptr;
+	blkid_probe_lookup_value(pr, "TYPE", &pt, nullptr);
+	new_partition.type = (pt != nullptr) ? std::string(pt) : "Unknown Type";
+
+	// Cleanup
+	blkid_free_probe(pr);
+
+	new_partition.used_bytes = 0;
+	new_partition.free_bytes = 0;
+	new_partition.used_bytes = 0;
+	if (mounted) {
+		struct statvfs stats;
+		if (!new_partition.holder.empty())
+			statvfs(mounts[new_partition.holder].c_str(), &stats);
+		else
+			statvfs(mounts[new_partition.name].c_str(), &stats);
+		new_partition.total_bytes = stats.f_blocks * stats.f_frsize;
+		new_partition.free_bytes = stats.f_bfree * stats.f_frsize;
+		new_partition.used_bytes = new_partition.total_bytes - new_partition.free_bytes;
+		if (new_partition.label == "Unknown Model" && !new_partition.mount_path.empty()) {
+			new_partition.label = new_partition.mount_path;
+		}
+	}
+	return new_partition;
 }
