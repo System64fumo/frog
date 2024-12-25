@@ -243,7 +243,7 @@ void frog::create_properties_dialog(file_entry* f_entry) {
 	Gtk::Image* image_icon = Gtk::make_managed<Gtk::Image>();
 	image_icon->set_pixel_size(64);
 	auto icon_theme = Gtk::IconTheme::get_for_display(Gdk::Display::get_default());
-	auto icon_info = icon_theme->lookup_icon(f_entry->file_icon, f_entry->icon_size);
+	auto icon_info = icon_theme->lookup_icon(f_entry->file_icon, file_icon_size);
 	auto file = icon_info->get_file();
 	auto icon = Gdk::Texture::create_from_file(file);
 	image_icon->set(icon);

@@ -19,7 +19,6 @@ class file_entry : public Gtk::Box {
 		std::string file_icon;
 		int file_size;
 		int content_count;
-		const int icon_size = 64;
 		Gtk::Image image;
 		Gtk::EditableLabel label;
 
