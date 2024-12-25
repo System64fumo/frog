@@ -18,6 +18,7 @@
 #include <atomic>
 #include <future>
 
+class config_parser;
 class directory_watcher;
 class file_entry;
 
@@ -25,8 +26,11 @@ class frog : public Gtk::Window {
 	public:
 		frog();
 		Glib::RefPtr<Gtk::IconTheme> icon_theme;
+		config_parser* config;
 
 	private:
+		int collapse_width = 480;
+
 		// TODO: This is starting to get rather long here.
 		// Consider moving some parts of this to separate files.
 		std::filesystem::path current_path;
