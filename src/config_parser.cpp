@@ -32,18 +32,6 @@ config_parser::config_parser(const std::string &filename) {
 	}
 }
 
-std::string config_parser::get_value(const std::string &section, const std::string &key) {
-	auto section_iter = data.find(section);
-	if (section_iter == data.end())
-		return "empty";
-
-	auto key_iter = section_iter->second.find(key);
-	if (key_iter != section_iter->second.end())
-		return key_iter->second;
-
-	return "empty";
-}
-
 std::string config_parser::trim(const std::string &str) {
 	size_t first = str.find_first_not_of(' ');
 	if (std::string::npos == first)
