@@ -23,6 +23,8 @@ frog::frog() {
 	set_child(overlay_main);
 	overlay_main.set_child(box_main);
 	icon_theme = Gtk::IconTheme::get_for_display(Gdk::Display::get_default());
+	config = new config_parser(std::string(getenv("HOME")) + "/.config/sys64/frog/config.conf");
+	collapse_width = std::stoi(config->data["main"]["collapse-width"]);
 
 	get_xdg_user_dirs();
 	load_icon_map();
@@ -260,11 +262,10 @@ void frog::sidebar_setup() {
 
 	// Pinned items
 	flowbox_places.signal_child_activated().connect(sigc::mem_fun(*this, &frog::on_places_child_activated));
-	config_parser config(std::string(getenv("HOME")) + "/.config/sys64/frog/config.conf");
-	std::vector<std::string> keys = config.get_keys("pinned");
+	std::vector<std::string> keys = config->get_keys("pinned");
 
 	for (const auto &key : keys) {
-		place *place_entry = Gtk::make_managed<place>(key, config.data["pinned"][key]);
+		place *place_entry = Gtk::make_managed<place>(key, config->data["pinned"][key]);
 		flowbox_places.append(*place_entry);
 	}
 
@@ -459,7 +460,7 @@ void frog::snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>& snapshot) {
 
 void frog::switch_layout() {
 	// TODO: This could be better
-	if (get_width() > 480) { // Desktop UI
+	if (get_width() > collapse_width) { // Desktop UI
 		if (!revealer_sidebar.get_style_context()->has_class("mobile"))
 			return;
 
