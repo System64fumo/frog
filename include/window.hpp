@@ -26,11 +26,16 @@ class frog : public Gtk::Window {
 	public:
 		frog();
 		Glib::RefPtr<Gtk::IconTheme> icon_theme;
+
 		config_parser* config;
+		int collapse_width = 480;
+		int file_icon_size = 64;
+		int file_entry_width = 96;
+		int file_entry_height = 110;
+		int file_label_limit = 10;
+		int file_spacing = 30;
 
 	private:
-		int collapse_width = 480;
-
 		// TODO: This is starting to get rather long here.
 		// Consider moving some parts of this to separate files.
 		std::filesystem::path current_path;

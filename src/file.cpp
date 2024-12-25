@@ -22,7 +22,7 @@ file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry)
 	get_style_context()->add_class("file_entry");
 
 	append(image);
-	image.set_pixel_size(icon_size);
+	image.set_pixel_size(win->file_icon_size);
 	image.set_from_icon_name("content-loading-symbolic");
 
 	append(label);
@@ -34,10 +34,10 @@ file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry)
 	ulabel->set_lines(2);
 	ulabel->set_justify(Gtk::Justification::CENTER);
 	ulabel->set_ellipsize(Pango::EllipsizeMode::END);
-	ulabel->set_max_width_chars(10);
+	ulabel->set_max_width_chars(win->file_label_limit);
 	ulabel->set_wrap_mode(Pango::WrapMode::WORD_CHAR);
 	text->set_propagate_text_width(true);
-	text->set_max_width_chars(10);
+	text->set_max_width_chars(win->file_label_limit);
 
 	// Handle renaming
 	label.property_editing().signal_changed().connect([&, entry]() {
@@ -57,7 +57,7 @@ file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry)
 	source->set_actions(Gdk::DragAction::MOVE);
 
 	source->signal_prepare().connect([&](const double &x, const double &y) {
-		source->set_icon(image.get_paintable(), icon_size / 2, icon_size / 2);
+		source->set_icon(image.get_paintable(), win->file_icon_size / 2, win->file_icon_size / 2);
 		auto flowbox = dynamic_cast<Gtk::FlowBox*>(get_parent()->get_parent());
 		auto selected_entries = flowbox->get_selected_children();
 		std::vector<GFile*> files;
@@ -134,7 +134,7 @@ void file_entry::load_data() {
 	// Also uses a lot of ram per instance
 
 	// Load icons
-	auto icon_info = win->icon_theme->lookup_icon(file_icon, icon_size);
+	auto icon_info = win->icon_theme->lookup_icon(file_icon, win->file_icon_size);
 	auto file = icon_info->get_file();
 	auto icon = Gdk::Texture::create_from_file(file);
 
@@ -236,7 +236,7 @@ void file_entry::load_metadata() {
 Glib::RefPtr<Gdk::Pixbuf> file_entry::resize_thumbnail(const Glib::RefPtr<Gdk::Pixbuf>& pixbuf) {
 	const int img_width = pixbuf->get_width();
 	const int img_height = pixbuf->get_height();
-	const double scale = std::min((double)icon_size / img_width, (double)icon_size / img_height);
+	const double scale = std::min((double)win->file_icon_size / img_width, (double)win->file_icon_size / img_height);
 	const int new_width = (int)(img_width * scale);
 	const int new_height = (int)(img_height * scale);
 	return pixbuf->scale_simple(new_width, new_height, Gdk::InterpType::BILINEAR);

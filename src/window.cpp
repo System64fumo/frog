@@ -23,8 +23,15 @@ frog::frog() {
 	set_child(overlay_main);
 	overlay_main.set_child(box_main);
 	icon_theme = Gtk::IconTheme::get_for_display(Gdk::Display::get_default());
+
+	// Load config
 	config = new config_parser(std::string(getenv("HOME")) + "/.config/sys64/frog/config.conf");
 	collapse_width = std::stoi(config->data["main"]["collapse-width"]);
+	file_icon_size = std::stoi(config->data["file"]["icon-size"]);
+	file_entry_width = std::stoi(config->data["file"]["entry-width"]);
+	file_entry_height = std::stoi(config->data["file"]["entry-height"]);
+	file_label_limit = std::stoi(config->data["file"]["label-limit"]);
+	file_spacing = std::stoi(config->data["file"]["spacing"]);
 
 	get_xdg_user_dirs();
 	load_icon_map();
@@ -137,8 +144,8 @@ frog::frog() {
 	flowbox_files.set_valign(Gtk::Align::START); // TODO: Undo this eventually
 	flowbox_files.set_homogeneous(true);
 	flowbox_files.set_max_children_per_line(128);
-	flowbox_files.set_row_spacing(30);
-	flowbox_files.set_column_spacing(30);
+	flowbox_files.set_row_spacing(file_spacing);
+	flowbox_files.set_column_spacing(file_spacing);
 
 	flowbox_files.set_selection_mode(Gtk::SelectionMode::MULTIPLE);
 	auto target = Gtk::DropTarget::create(GDK_TYPE_FILE_LIST, Gdk::DragAction::MOVE);
@@ -430,7 +437,7 @@ void frog::create_file_entry(const std::filesystem::directory_entry &entry, cons
 	file_entry *f_entry = Gtk::make_managed<file_entry>(this, entry);
 	Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
 
-	fbox_child->set_size_request(96,110);
+	fbox_child->set_size_request(file_entry_width, file_entry_height);
 	fbox_child->set_child(*f_entry);
 	fbox_child->set_focusable(false); // Fixes focus issue when renaming
 	fbox_child->set_valign(Gtk::Align::START);
