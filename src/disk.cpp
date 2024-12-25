@@ -264,12 +264,15 @@ disk_manager::partition disk_manager::create_partition(const std::string& devnod
 		parent_dev = new_partition.name.substr(0, 4);
 
 	// Check if the partition is encrypted
-	for (const auto& entry : std::filesystem::directory_iterator("/sys/block/" + parent_dev + "/" + new_partition.name + "/holders")) {
-		if (std::filesystem::is_directory(entry)) {
-			std::ifstream file(entry.path().string() + "/dm/name");
-			std::stringstream buffer;
-			buffer << file.rdbuf();
-			new_partition.name = "mapper/" + buffer.str().substr(0, buffer.str().size() - 1);
+	std::string holder_path = "/sys/block/" + parent_dev + "/" + new_partition.name + "/holders";
+	if (std::filesystem::exists(holder_path)) {
+		for (const auto& entry : std::filesystem::directory_iterator(holder_path)) {
+			if (std::filesystem::is_directory(entry)) {
+				std::ifstream file(entry.path().string() + "/dm/name");
+				std::stringstream buffer;
+				buffer << file.rdbuf();
+				new_partition.name = "mapper/" + buffer.str().substr(0, buffer.str().size() - 1);
+			}
 		}
 	}
 	new_partition.mount_path = mounts[new_partition.name];
