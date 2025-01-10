@@ -477,6 +477,7 @@ void frog::switch_layout() {
 		sidebar_should_hide = true;
 		entry_path.get_children()[0]->set_visible(false);
 		revealer_sidebar.get_style_context()->remove_class("mobile");
+		entry_path.set_position(0);
 		button_dummy.grab_focus();
 	}
 	else { // Mobile UI
