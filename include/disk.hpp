@@ -7,7 +7,6 @@
 
 #include <libudev.h>
 #include <glibmm/dispatcher.h>
-#include <giomm/dbusconnection.h>
 #include <giomm/dbusproxy.h>
 
 class disk_manager {
