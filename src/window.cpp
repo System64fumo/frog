@@ -298,11 +298,30 @@ void frog::sidebar_setup() {
 
 bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::ModifierType &state) {
 	// TODO: Add auto navigation
+	const bool& mod_control = (state & Gdk::ModifierType::CONTROL_MASK) == Gdk::ModifierType::CONTROL_MASK;
 
 	// Escape key
 	if (keycode == 9) {
 		button_dummy.grab_focus();
 		entry_path.set_text(current_path.string());
+	}
+
+	// Control + X (Cut)
+	else if (mod_control && keycode == 53) {
+		std::printf("TODO: Add cut shortcut\n");
+		return true;
+	}
+
+	// Control + C (Copy)
+	else if (mod_control && keycode == 54) {
+		std::printf("TODO: Add copy shortcut\n");
+		return true;
+	}
+
+	// Control + V (Paste)
+	else if (mod_control && keycode == 55) {
+		std::printf("TODO: Add paste shortcut\n");
+		return true;
 	}
 
 	// Slash key
@@ -319,7 +338,6 @@ bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::Mo
 		entry_path.set_position(entry_path.get_text_length());
 		return true;
 	}
-
 
 	return false;
 }

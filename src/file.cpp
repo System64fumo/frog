@@ -16,7 +16,6 @@
 #include <glibmm/convert.h>
 #include <gstreamer-1.0/gst/gst.h>
 #include <gst/video/video-info.h>
-#include <thread>
 
 file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry) : Gtk::Box(Gtk::Orientation::VERTICAL), win(win), file_size(0), content_count(0), label("Loading.."), entry(entry) {
 	get_style_context()->add_class("file_entry");
