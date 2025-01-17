@@ -3,6 +3,8 @@
 Sleek file manager written in gtkmm 4<br><br>
 <hr>
 
+[![Packaging status](https://repology.org/badge/vertical-allrepos/frogfm.svg)](https://repology.org/project/frogfm/versions)
+
 > [!IMPORTANT]
 > This is heavily W.I.P<br>
 > Expect missing features.<br>
