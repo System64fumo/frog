@@ -3,6 +3,7 @@
 #include <gtkmm/entry.h>
 #include <gtkmm/image.h>
 #include <gtkmm/editablelabel.h>
+#include <gtkmm/dragsource.h>
 #include <filesystem>
 
 class frog;
@@ -27,6 +28,7 @@ class file_entry : public Gtk::Box {
 		void load_metadata();
 
 	private:
+		Glib::RefPtr<Gtk::DragSource> source;
 		const std::filesystem::directory_entry entry;
 		Glib::RefPtr<Gdk::Pixbuf> pixbuf;
 
