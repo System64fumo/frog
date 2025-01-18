@@ -25,7 +25,42 @@ frog::frog() {
 	icon_theme = Gtk::IconTheme::get_for_display(Gdk::Display::get_default());
 
 	// Load config
-	config = new config_parser(std::string(getenv("HOME")) + "/.config/sys64/frog/config.conf");
+	std::string config_path;
+	std::unordered_map<std::string, std::unordered_map<std::string, std::string>> config_usr;
+
+	bool cfg_sys = std::filesystem::exists("/usr/share/sys64/frog/config.conf");
+	bool cfg_sys_local = std::filesystem::exists("/usr/local/share/sys64/frog/config.conf");
+	bool cfg_usr = std::filesystem::exists(std::string(getenv("HOME")) + "/.config/sys64/frog/config.conf");
+
+	// Load default config
+	if (cfg_sys)
+		config_path = "/usr/share/sys64/frog/config.conf";
+	else if (cfg_sys_local)
+		config_path = "/usr/local/share/sys64/frog/config.conf";
+	else
+		std::fprintf(stderr, "No default config found, Things will get funky!\n");
+
+	config = new config_parser(config_path);
+
+	// Load user config
+	if (cfg_usr)
+		config_path = std::string(getenv("HOME")) + "/.config/sys64/frog/config.conf";
+	else
+		std::fprintf(stderr, "No user config found\n");
+
+	config_usr = config_parser(config_path).data;
+
+	// Merge configs
+	for (const auto& [key, nested_map] : config_usr)
+		for (const auto& [inner_key, inner_value] : nested_map)
+			config->data[key][inner_key] = inner_value;
+
+	// Sanity check
+	if (!(cfg_sys || cfg_sys_local || cfg_usr)) {
+		std::fprintf(stderr, "No config available, Something ain't right here.");
+		return;
+	}
+
 	collapse_width = std::stoi(config->data["main"]["collapse-width"]);
 	file_icon_size = std::stoi(config->data["file"]["icon-size"]);
 	file_entry_width = std::stoi(config->data["file"]["entry-width"]);
