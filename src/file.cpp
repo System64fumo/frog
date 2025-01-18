@@ -4,7 +4,6 @@
 
 #include "window.hpp"
 
-#include <gtkmm/dragsource.h>
 #include <gtkmm/droptarget.h>
 #include <gtkmm/stack.h>
 #include <gtkmm/label.h>
@@ -52,7 +51,7 @@ file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry)
 	image.set_from_icon_name(file_icon);
 
 	// Set up drag and drop
-	Glib::RefPtr<Gtk::DragSource> source = Gtk::DragSource::create();
+	source = Gtk::DragSource::create();
 	source->set_actions(Gdk::DragAction::MOVE);
 
 	source->signal_prepare().connect([&](const double &x, const double &y) {
