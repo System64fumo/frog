@@ -55,7 +55,6 @@ file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry)
 	source->set_actions(Gdk::DragAction::MOVE);
 
 	source->signal_prepare().connect([&](const double &x, const double &y) {
-		source->set_icon(image.get_paintable(), win->file_icon_size / 2, win->file_icon_size / 2);
 		auto flowbox = dynamic_cast<Gtk::FlowBox*>(get_parent()->get_parent());
 		auto selected_entries = flowbox->get_selected_children();
 		std::vector<GFile*> files;
@@ -137,6 +136,7 @@ void file_entry::load_data() {
 	auto icon = Gdk::Texture::create_from_file(file);
 
 	image.set(icon);
+	source->set_icon(icon, win->file_icon_size / 2, win->file_icon_size / 2);
 	icon.reset();
 }
 
