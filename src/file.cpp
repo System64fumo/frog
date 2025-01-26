@@ -47,7 +47,7 @@ file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry)
 	});
 
 	is_directory = entry.is_directory();
-	file_icon = entry.is_directory() ? "default-folder" : "application-blank";
+	file_icon = entry.is_directory() ? "folder" : "application-x-generic";
 	image.set_from_icon_name(file_icon);
 
 	// Set up drag and drop
