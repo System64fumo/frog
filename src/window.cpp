@@ -19,7 +19,6 @@
 
 frog::frog() {
 	set_title("Frog");
-	set_default_size(800, 400);
 	set_child(overlay_main);
 	overlay_main.set_child(box_main);
 	icon_theme = Gtk::IconTheme::get_for_display(Gdk::Display::get_default());
@@ -68,6 +67,7 @@ frog::frog() {
 	file_label_limit = std::stoi(config->data["file"]["label-limit"]);
 	file_spacing = std::stoi(config->data["file"]["spacing"]);
 
+	set_default_size(std::stoi(config->data["main"]["width"]), std::stoi(config->data["main"]["height"]));
 	get_xdg_user_dirs();
 	load_icon_map();
 	menu_file_setup();
