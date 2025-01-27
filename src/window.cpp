@@ -307,7 +307,11 @@ void frog::sidebar_setup() {
 	std::vector<std::string> keys = config->get_keys("pinned");
 
 	for (const auto &key : keys) {
-		place *place_entry = Gtk::make_managed<place>(key, config->data["pinned"][key]);
+		std::string pinned_path = config->data["pinned"][key];
+		if (pinned_path[0] == '~')
+			pinned_path = std::string(getenv("HOME")) + pinned_path.substr(1);
+
+		place *place_entry = Gtk::make_managed<place>(key, std::filesystem::absolute(pinned_path));
 		flowbox_places.append(*place_entry);
 	}
 
