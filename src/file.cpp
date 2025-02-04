@@ -206,8 +206,6 @@ void file_entry::load_thumbnail() {
 }
 
 void file_entry::load_metadata() {
-	// TODO: Check for permission before loading metadata
-
 	// Filesize
 	if (is_directory) {
 		for (const auto& entry : std::filesystem::recursive_directory_iterator(path, std::filesystem::directory_options::skip_permission_denied)) {

@@ -27,7 +27,7 @@ uint calculate_size(const std::filesystem::path& path, std::map<std::filesystem:
 	uint size = 0;
 
 	if (std::filesystem::is_directory(path)) {
-		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
+		for (const auto& entry : std::filesystem::recursive_directory_iterator(path, std::filesystem::directory_options::skip_permission_denied)) {
 			if (std::filesystem::is_regular_file(entry.path())) {
 				uint file_size = std::filesystem::file_size(entry.path());
 				file_sizes[entry.path()] = file_size;
@@ -110,7 +110,7 @@ void frog::file_op(const std::vector<std::filesystem::path>& source, std::filesy
 				if (!std::filesystem::exists(dest_path)) {
 					std::filesystem::create_directories(dest_path);
 				}
-				for (const auto& entry : std::filesystem::recursive_directory_iterator(src)) {
+				for (const auto& entry : std::filesystem::recursive_directory_iterator(src, std::filesystem::directory_options::skip_permission_denied)) {
 					std::filesystem::path sub_dest_path = destination / std::filesystem::relative(entry.path(), src.parent_path());
 					if (std::filesystem::is_directory(entry.path())) {
 						std::filesystem::create_directories(sub_dest_path);
@@ -135,7 +135,7 @@ void frog::file_op(const std::vector<std::filesystem::path>& source, std::filesy
 
 			if (std::filesystem::is_directory(src)) {
 				std::filesystem::create_directories(new_dest_path);
-				for (const auto& entry : std::filesystem::recursive_directory_iterator(src)) {
+				for (const auto& entry : std::filesystem::recursive_directory_iterator(src, std::filesystem::directory_options::skip_permission_denied)) {
 					std::filesystem::path sub_new_dest_path = new_dest_path / std::filesystem::relative(entry.path(), src);
 					if (std::filesystem::is_directory(entry.path())) {
 						std::filesystem::create_directories(sub_new_dest_path);
@@ -167,7 +167,7 @@ void frog::file_op(const std::vector<std::filesystem::path>& source, std::filesy
 		else if (action == 't') {
 			if (std::filesystem::is_directory(src)) {
 				std::filesystem::create_directories(dest_path);
-				for (const auto& entry : std::filesystem::recursive_directory_iterator(src)) {
+				for (const auto& entry : std::filesystem::recursive_directory_iterator(src, std::filesystem::directory_options::skip_permission_denied)) {
 					std::filesystem::path sub_dest_path = dest_path / std::filesystem::relative(entry.path(), src);
 					if (std::filesystem::is_directory(entry.path())) {
 						std::filesystem::create_directories(sub_dest_path);
