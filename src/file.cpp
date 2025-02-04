@@ -210,7 +210,7 @@ void file_entry::load_metadata() {
 
 	// Filesize
 	if (is_directory) {
-		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
+		for (const auto& entry : std::filesystem::recursive_directory_iterator(path, std::filesystem::directory_options::skip_permission_denied)) {
 			if (std::filesystem::is_regular_file(entry)) {
 				file_size += std::filesystem::file_size(entry);
 			}
@@ -223,7 +223,7 @@ void file_entry::load_metadata() {
 	// TODO: Maybe it would be nice to get the content type instead of general content? (Files/Dirs)
 	// Content
 	if (is_directory) {
-		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
+		for (const auto& entry : std::filesystem::recursive_directory_iterator(path, std::filesystem::directory_options::skip_permission_denied)) {
 			(void)entry;
 			content_count++;
 		}
