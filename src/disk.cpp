@@ -307,8 +307,12 @@ disk_manager::partition disk_manager::create_partition(const std::string& devnod
 		new_partition.total_bytes = stats.f_blocks * stats.f_frsize;
 		new_partition.free_bytes = stats.f_bfree * stats.f_frsize;
 		new_partition.used_bytes = new_partition.total_bytes - new_partition.free_bytes;
-		if (new_partition.label == "Unknown Model" && !new_partition.mount_path.empty()) {
-			new_partition.label = new_partition.mount_path;
+
+		if (new_partition.label == "Unknown" && !new_partition.mount_path.empty()) {
+			if (new_partition.mount_path == "/")
+				new_partition.label = "System";
+			else
+				new_partition.label = std::filesystem::path(new_partition.mount_path).filename();
 		}
 	}
 	return new_partition;
