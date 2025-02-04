@@ -105,24 +105,7 @@ void frog::file_op(const std::vector<std::filesystem::path>& source, std::filesy
 
 		// Merge
 		if (action == 'm') {
-			if (std::filesystem::is_directory(src)) {
-				dest_path = destination / src.filename();
-				if (!std::filesystem::exists(dest_path)) {
-					std::filesystem::create_directories(dest_path);
-				}
-				for (const auto& entry : std::filesystem::recursive_directory_iterator(src, std::filesystem::directory_options::skip_permission_denied)) {
-					std::filesystem::path sub_dest_path = destination / std::filesystem::relative(entry.path(), src.parent_path());
-					if (std::filesystem::is_directory(entry.path())) {
-						std::filesystem::create_directories(sub_dest_path);
-					}
-					else {
-						std::filesystem::copy(entry.path(), sub_dest_path, std::filesystem::copy_options::overwrite_existing);
-					}
-				}
-			}
-			else {
-				std::filesystem::copy(src, dest_path, std::filesystem::copy_options::overwrite_existing);
-			}
+			std::filesystem::copy(src, dest_path, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
 		}
 
 		// Duplicate
@@ -165,23 +148,8 @@ void frog::file_op(const std::vector<std::filesystem::path>& source, std::filesy
 
 		// Move (Copy then delete)
 		else if (action == 't') {
-			if (std::filesystem::is_directory(src)) {
-				std::filesystem::create_directories(dest_path);
-				for (const auto& entry : std::filesystem::recursive_directory_iterator(src, std::filesystem::directory_options::skip_permission_denied)) {
-					std::filesystem::path sub_dest_path = dest_path / std::filesystem::relative(entry.path(), src);
-					if (std::filesystem::is_directory(entry.path())) {
-						std::filesystem::create_directories(sub_dest_path);
-					}
-					else {
-						std::filesystem::copy(entry.path(), sub_dest_path, std::filesystem::copy_options::overwrite_existing);
-					}
-				}
-				std::filesystem::remove_all(src);
-			}
-			else {
-				std::filesystem::copy(src, dest_path, std::filesystem::copy_options::overwrite_existing);
-				std::filesystem::remove(src);
-			}
+			std::filesystem::copy(src, dest_path, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+			std::filesystem::remove_all(src);
 		}
 	}
 }
