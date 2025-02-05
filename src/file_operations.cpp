@@ -45,144 +45,150 @@ uint calculate_size(const std::filesystem::path& path, std::map<std::filesystem:
 }
 
 void frog::file_op(const std::vector<std::filesystem::path>& source, std::filesystem::path destination, const char& action) {
-	auto prefered_resolution = std::filesystem::copy_options::overwrite_existing;
-	std::set<std::filesystem::path> conflicts;
-
-	// TODO: Run this in another thread
+	// TODO: Move this to another class
+	// TODO: Add a task GUI entry to the tasks list in the main window
 	// TODO: Also scan for permissions
 	// TODO: Consider adding a progress indicator by getting the total size of-
 	// -the transfer before running the actions.
 
-	// Scan for conflicts
-	for (const auto& src : source) {
-		if (!std::filesystem::exists(src)) {
-			std::fprintf(stderr, "Source path does not exist: %s\n", src.c_str());
-			continue;
+	std::thread([&, source, destination, action]() {
+		std::printf("Task: %c has started\n", action);
+
+		auto prefered_resolution = std::filesystem::copy_options::overwrite_existing;
+		std::set<std::filesystem::path> conflicts;
+
+		// Scan for conflicts
+		for (const auto& src : source) {
+			if (!std::filesystem::exists(src)) {
+				std::fprintf(stderr, "Source path does not exist: %s\n", src.c_str());
+				continue;
+			}
+
+			std::filesystem::path dest_path = destination / src.filename();
+
+			if (std::filesystem::exists(dest_path)) {
+				conflicts.insert(dest_path);
+			}
 		}
 
-		std::filesystem::path dest_path = destination / src.filename();
-
-		if (std::filesystem::exists(dest_path)) {
-			conflicts.insert(dest_path);
+		// TODO: Prompt the user for a resolution to the conflict
+		// Print conflicts
+		if (!conflicts.empty()) {
+			std::printf("Conflicts detected:\n");
+			for (const auto& conflict : conflicts) {
+				std::printf(" - %s\n", conflict.c_str());
+				return;
+			}
 		}
-	}
+		else {
+			std::printf("No conflicts detected.\n");
+		}
 
-	// TODO: Prompt the user for a resolution to the conflict
-	// Print conflicts
-	if (!conflicts.empty()) {
-		std::printf("Conflicts detected:\n");
-		for (const auto& conflict : conflicts) {
-			std::printf(" - %s\n", conflict.c_str());
+		// Cancel
+		if (action == 'c') {
 			return;
 		}
-	}
-	else {
-		std::printf("No conflicts detected.\n");
-	}
 
-	// Cancel
-	if (action == 'c') {
-		return;
-	}
+		if (!std::filesystem::exists(destination)) {
+			std::filesystem::create_directories(destination);
+		}
 
-	if (!std::filesystem::exists(destination)) {
-		std::filesystem::create_directories(destination);
-	}
+		// Calculate total size of transfer
+		uint total_size = 0;
+		std::map<std::filesystem::path, uint> file_sizes;
+		for (const auto& src : source) {
+			total_size += calculate_size(src, file_sizes);
+		}
+		std::printf("Total transfer size: %s\n", to_human_readable(total_size).c_str());
 
+		// TODO: Delete action should also run here (Share async and permission check code)
+		// Perform actions
+		for (const auto& src : source) {
+			std::filesystem::path dest_path = destination / src.filename();
+			std::printf("Transfering: %s which is %s\n", src.c_str(), to_human_readable(file_sizes[src]).c_str());
 
-	// Calculate total size of transfer
-	uint total_size = 0;
-	std::map<std::filesystem::path, uint> file_sizes;
-	for (const auto& src : source) {
-		total_size += calculate_size(src, file_sizes);
-	}
-	std::printf("Total transfer size: %s\n", to_human_readable(total_size).c_str());
+			// Merge
+			if (action == 'm') {
+				if (std::filesystem::is_directory(src)) {
+					dest_path = destination / src.filename();
+					if (!std::filesystem::exists(dest_path)) {
+						std::filesystem::create_directories(dest_path);
+					}
+					for (const auto& entry : std::filesystem::recursive_directory_iterator(src, std::filesystem::directory_options::skip_permission_denied)) {
+						std::filesystem::path sub_dest_path = destination / std::filesystem::relative(entry.path(), src.parent_path());
+						if (std::filesystem::is_directory(entry.path())) {
+							std::filesystem::create_directories(sub_dest_path);
+						}
+						else {
+							std::filesystem::copy(entry.path(), sub_dest_path, prefered_resolution);
+						}
+					}
+				}
+				else {
+					std::filesystem::copy(src, dest_path, prefered_resolution);
+				}
+			}
 
-	// TODO: Delete action should also run here (Share async and permission check code)
-	// Perform actions
-	for (const auto& src : source) {
-		std::filesystem::path dest_path = destination / src.filename();
-		std::printf("Transfering: %s which is %s\n", src.c_str(), to_human_readable(file_sizes[src]).c_str());
+			// Duplicate
+			else if (action == 'd') {
+				int iteration = 1;
+				std::filesystem::path new_dest_path = dest_path;
+				while (std::filesystem::exists(new_dest_path)) {
+					new_dest_path = destination / (src.stem().string() + "_" + std::to_string(iteration++) + src.extension().string());
+				}
 
-		// Merge
-		if (action == 'm') {
-			if (std::filesystem::is_directory(src)) {
-				dest_path = destination / src.filename();
-				if (!std::filesystem::exists(dest_path)) {
+				if (std::filesystem::is_directory(src)) {
+					std::filesystem::create_directories(new_dest_path);
+					for (const auto& entry : std::filesystem::recursive_directory_iterator(src, std::filesystem::directory_options::skip_permission_denied)) {
+						std::filesystem::path sub_new_dest_path = new_dest_path / std::filesystem::relative(entry.path(), src);
+						if (std::filesystem::is_directory(entry.path())) {
+							std::filesystem::create_directories(sub_new_dest_path);
+						}
+						else {
+							std::filesystem::copy(entry.path(), sub_new_dest_path);
+						}
+					}
+				}
+				else {
+					std::filesystem::copy(src, new_dest_path);
+				}
+			}
+
+			// TODO: Check if the source and destination paths are on the same filesystem
+			// This helps unnecessarily copying content.
+
+			// Move (Same filesystem)
+			else if (action == 'v') {
+				try {
+					std::filesystem::rename(src, dest_path);
+				}
+				catch (const std::filesystem::filesystem_error& e) {
+					std::fprintf(stderr, "Error moving %s to %s: %s\n", src.c_str(), dest_path.c_str(), e.what());
+				}
+			}
+
+			// Move (Copy then delete)
+			else if (action == 't') {
+				if (std::filesystem::is_directory(src)) {
 					std::filesystem::create_directories(dest_path);
-				}
-				for (const auto& entry : std::filesystem::recursive_directory_iterator(src, std::filesystem::directory_options::skip_permission_denied)) {
-					std::filesystem::path sub_dest_path = destination / std::filesystem::relative(entry.path(), src.parent_path());
-					if (std::filesystem::is_directory(entry.path())) {
-						std::filesystem::create_directories(sub_dest_path);
+					for (const auto& entry : std::filesystem::recursive_directory_iterator(src, std::filesystem::directory_options::skip_permission_denied)) {
+						std::filesystem::path sub_dest_path = dest_path / std::filesystem::relative(entry.path(), src);
+						if (std::filesystem::is_directory(entry.path())) {
+							std::filesystem::create_directories(sub_dest_path);
+						}
+						else {
+							std::filesystem::copy(entry.path(), sub_dest_path, prefered_resolution);
+						}
 					}
-					else {
-						std::filesystem::copy(entry.path(), sub_dest_path, prefered_resolution);
-					}
+					std::filesystem::remove_all(src);
 				}
-			}
-			else {
-				std::filesystem::copy(src, dest_path, prefered_resolution);
+				else {
+					std::filesystem::copy(src, dest_path, prefered_resolution);
+					std::filesystem::remove(src);
+				}
 			}
 		}
 
-		// Duplicate
-		else if (action == 'd') {
-			int iteration = 1;
-			std::filesystem::path new_dest_path = dest_path;
-			while (std::filesystem::exists(new_dest_path)) {
-				new_dest_path = destination / (src.stem().string() + "_" + std::to_string(iteration++) + src.extension().string());
-			}
-
-			if (std::filesystem::is_directory(src)) {
-				std::filesystem::create_directories(new_dest_path);
-				for (const auto& entry : std::filesystem::recursive_directory_iterator(src, std::filesystem::directory_options::skip_permission_denied)) {
-					std::filesystem::path sub_new_dest_path = new_dest_path / std::filesystem::relative(entry.path(), src);
-					if (std::filesystem::is_directory(entry.path())) {
-						std::filesystem::create_directories(sub_new_dest_path);
-					}
-					else {
-						std::filesystem::copy(entry.path(), sub_new_dest_path);
-					}
-				}
-			}
-			else {
-				std::filesystem::copy(src, new_dest_path);
-			}
-		}
-
-		// TODO: Check if the source and destination paths are on the same filesystem
-		// This helps unnecessarily copying content.
-
-		// Move (Same filesystem)
-		else if (action == 'v') {
-			try {
-				std::filesystem::rename(src, dest_path);
-			}
-			catch (const std::filesystem::filesystem_error& e) {
-				std::fprintf(stderr, "Error moving %s to %s: %s\n", src.c_str(), dest_path.c_str(), e.what());
-			}
-		}
-
-		// Move (Copy then delete)
-		else if (action == 't') {
-			if (std::filesystem::is_directory(src)) {
-				std::filesystem::create_directories(dest_path);
-				for (const auto& entry : std::filesystem::recursive_directory_iterator(src, std::filesystem::directory_options::skip_permission_denied)) {
-					std::filesystem::path sub_dest_path = dest_path / std::filesystem::relative(entry.path(), src);
-					if (std::filesystem::is_directory(entry.path())) {
-						std::filesystem::create_directories(sub_dest_path);
-					}
-					else {
-						std::filesystem::copy(entry.path(), sub_dest_path, prefered_resolution);
-					}
-				}
-				std::filesystem::remove_all(src);
-			}
-			else {
-				std::filesystem::copy(src, dest_path, prefered_resolution);
-				std::filesystem::remove(src);
-			}
-		}
-	}
+		std::printf("Task: %c has ended\n", action);
+	}).detach();
 }
