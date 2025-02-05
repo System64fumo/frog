@@ -333,6 +333,8 @@ void frog::sidebar_setup() {
 		}
 	}
 	dm->dispatcher_on_changed.connect(sigc::mem_fun(*this, &frog::on_dispatcher_disks_changed));
+
+	previous_selected_place = flowbox_places.get_child_at_index(0);
 }
 
 bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::ModifierType &state) {
@@ -442,9 +444,11 @@ void frog::on_places_child_activated(Gtk::FlowBoxChild* child) {
 			int ret = system(std::string("pkexec mount -o x-gvfs-show /dev/" + place_entry->part.name + " " + mount_path).c_str());
 			if (ret != 0) {
 				std::filesystem::remove(mount_path); // Slightly dangerous and stupid.
+				flowbox_places.select_child(*previous_selected_place);
 			}
 			else {
 				place_entry->file_path = mount_path;
+				previous_selected_place = flowbox_places.get_selected_children()[0];
 			}
 		}
 	}
