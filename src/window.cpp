@@ -435,7 +435,19 @@ void frog::on_places_child_activated(Gtk::FlowBoxChild* child) {
 	if (!place_entry)
 		return;
 
-	// TODO: Add a polkit thing to mount the disk
+	if (place_entry->is_disk) {
+		if (place_entry->file_path.empty()) {
+			std::string mount_path = std::string(getenv("XDG_RUNTIME_DIR")) + "/frog/" + place_entry->part.name;
+			std::filesystem::create_directories(mount_path);
+			int ret = system(std::string("pkexec mount -o x-gvfs-show /dev/" + place_entry->part.name + " " + mount_path).c_str());
+			if (ret != 0) {
+				std::filesystem::remove(mount_path); // Slightly dangerous and stupid.
+			}
+			else {
+				place_entry->file_path = mount_path;
+			}
+		}
+	}
 
 	next_paths.clear();
 	navigate_to_dir(place_entry->file_path);
