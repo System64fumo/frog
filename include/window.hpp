@@ -63,6 +63,7 @@ class frog : public Gtk::Window {
 
 		Gtk::ScrolledWindow scrolled_window_places;
 		Gtk::FlowBox flowbox_places;
+		Gtk::FlowBoxChild* previous_selected_place;
 
 		Gtk::Entry entry_path;
 		Glib::RefPtr<Gtk::EntryCompletion> entry_completion;
