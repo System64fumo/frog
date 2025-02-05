@@ -12,6 +12,7 @@
 #include <gtkmm/liststore.h>
 #include <gtkmm/gestureclick.h>
 #include <gtkmm/icontheme.h>
+#include <gtkmm/label.h>
 #include <giomm/menu.h>
 #include <giomm/simpleactiongroup.h>
 #include <filesystem>
@@ -54,6 +55,10 @@ class frog : public Gtk::Window {
 		Gtk::Revealer revealer_sidebar;
 		Gtk::Box box_sidebar;
 		Gtk::Box box_status;
+
+		Gtk::Button button_tasks;
+		Gtk::Label label_task_status;
+		Gtk::Revealer revealer_task_status;
 
 		Gtk::Box box_navigation;
 		Gtk::Button button_previous;

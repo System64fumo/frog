@@ -109,9 +109,6 @@ frog::frog() {
 				revealer_sidebar.set_reveal_child(true);
 				box_overlay.set_visible(true);
 			}
-			else {
-				std::printf("Expand file operations menu\n");
-			}
 		}, true);
 
 		switch_layout();
@@ -335,6 +332,27 @@ void frog::sidebar_setup() {
 	dm->dispatcher_on_changed.connect(sigc::mem_fun(*this, &frog::on_dispatcher_disks_changed));
 
 	previous_selected_place = flowbox_places.get_child_at_index(0);
+
+	// TODO: Enable this once the code is done
+	return;
+
+	// Tasks
+	box_sidebar.append(revealer_task_status);
+	revealer_task_status.set_child(button_tasks);
+	revealer_task_status.set_reveal_child();
+
+	button_tasks.get_style_context()->add_class("flat");
+	button_tasks.get_style_context()->add_class("button_tasks");
+	button_tasks.set_icon_name("edit-copy-symbolic");
+	button_tasks.set_hexpand();
+	button_tasks.set_focusable(false);
+
+	label_task_status.insert_at_end(button_tasks);
+	label_task_status.set_text("0/0 Copying");
+	label_task_status.set_xalign(0.95);
+	label_task_status.set_hexpand();
+
+	button_tasks.get_children()[0]->set_halign(Gtk::Align::START);
 }
 
 bool frog::on_key_press(const guint &keyval, const guint &keycode, const Gdk::ModifierType &state) {
