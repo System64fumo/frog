@@ -206,24 +206,29 @@ void file_entry::load_thumbnail() {
 }
 
 void file_entry::load_metadata() {
-	// Filesize
+	// TODO: Set a recursion limit
+	// TODO: Find a way to get the real size of pseudo fs?
 	if (is_directory) {
-		for (const auto& entry : std::filesystem::recursive_directory_iterator(path, std::filesystem::directory_options::skip_permission_denied)) {
-			if (std::filesystem::is_regular_file(entry)) {
-				file_size += std::filesystem::file_size(entry);
+		try {
+			for (const auto& entry : std::filesystem::recursive_directory_iterator(
+					path, std::filesystem::directory_options::skip_permission_denied |
+					std::filesystem::directory_options::follow_directory_symlink)) {
+				if (std::filesystem::is_regular_file(entry))
+					file_size += std::filesystem::file_size(entry);
+				content_count++;
 			}
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			std::printf("Filesystem error: %s\n", e.what());
 		}
 	}
 	else {
-		file_size = entry.file_size();
-	}
-
-	// TODO: Maybe it would be nice to get the content type instead of general content? (Files/Dirs)
-	// Content
-	if (is_directory) {
-		for (const auto& entry : std::filesystem::recursive_directory_iterator(path, std::filesystem::directory_options::skip_permission_denied)) {
-			(void)entry;
-			content_count++;
+		try {
+			file_size = std::filesystem::file_size(path);
+			content_count = 1;
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			std::printf("Filesystem error: %s\n", e.what());
 		}
 	}
 	// TODO: Add more metadata stuff (Image size, Video length, Ect..)

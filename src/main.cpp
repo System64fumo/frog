@@ -29,6 +29,17 @@ int main(int argc, char* argv[]) {
 			break;
 	}
 
+	if (argc > 1) {
+		char *path = argv[1];
+
+		size_t len = strlen(path);
+		if (len > 0 && path[len - 1] == '/') {
+			path[len - 1] = '\0';
+		}
+
+		start_path = path;
+	}
+
 	app->signal_open().connect([&](const std::vector<Glib::RefPtr<Gio::File>>& files, const Glib::ustring&) {
 		// For now only the last dir matters
 		// TODO: Add support for opening multiple directories at once
