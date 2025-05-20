@@ -25,7 +25,7 @@ file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry)
 
 	append(label);
 	label.set_halign(Gtk::Align::CENTER);
-	auto stack = dynamic_cast<Gtk::Stack*>(label.get_children()[0]);
+	auto stack = dynamic_cast<Gtk::Stack*>(label.get_children()[1]);
 	auto ulabel = dynamic_cast<Gtk::Label*>(stack->get_children()[0]);
 	auto text = dynamic_cast<Gtk::Text*>(stack->get_children()[1]);
 	stack->set_hhomogeneous(false);
