@@ -45,6 +45,7 @@ class frog : public Gtk::Window {
 
 		std::atomic<bool> stop_flag;
 		std::future<void> async_task;
+		std::mutex loading_entries_mutex;
 		bool sidebar_should_hide = true;
 
 		directory_watcher *watcher = nullptr;

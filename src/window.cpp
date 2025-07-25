@@ -11,6 +11,7 @@
 
 #include <gtk4-layer-shell.h>
 #include <gtkmm/eventcontrollerkey.h>
+#include <gtkmm/eventcontrollerlegacy.h>
 #include <gtkmm/separator.h>
 #include <gtkmm/droptarget.h>
 #include <gdkmm/clipboard.h>
@@ -140,6 +141,23 @@ frog::frog() {
 		sigc::mem_fun(*this, &frog::on_key_press), true);
 	add_controller(event_controller_key);
 
+	auto controller = Gtk::EventControllerLegacy::create();
+	controller->signal_event().connect(
+		[&](const Glib::RefPtr<const Gdk::Event>& event) {
+			if(event->get_event_type() == Gdk::Event::Type::BUTTON_PRESS) {
+				unsigned int btn = event->get_button();
+				if (btn == 9 && button_next.is_sensitive()) // Forward
+					button_next.activate();
+				else if (btn == 8 && button_previous.is_sensitive()) // Backward
+					button_previous.activate();
+				else
+					return false;
+			}
+			return false;
+		}, false
+	);
+	add_controller(controller);
+
 	Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
 	Glib::RefPtr<Gtk::GestureClick> right_click_gesture = Gtk::GestureClick::create();
 	click_gesture->set_button(GDK_BUTTON_PRIMARY);
@@ -151,7 +169,7 @@ frog::frog() {
 		if (children.size() == 0)
 			return;
 
-		auto f_entry = dynamic_cast<file_entry*>(children[0]->get_child());
+		auto f_entry = dynamic_cast<file_entry*>(children[0]);
 		f_entry->label.stop_editing(false);
 
 		flowbox_files.unselect_all();
@@ -421,8 +439,8 @@ void frog::on_entry_changed() {
 }
 
 int frog::sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2) {
-	auto item1 = dynamic_cast<file_entry*>(child1->get_child());
-	auto item2 = dynamic_cast<file_entry*>(child2->get_child());
+	auto item1 = dynamic_cast<file_entry*>(child1);
+	auto item2 = dynamic_cast<file_entry*>(child2);
 
 	if (item1->is_directory != item2->is_directory)
 		return item1->is_directory ? -1 : 1;
@@ -436,7 +454,7 @@ int frog::sort_func(Gtk::FlowBoxChild *child1, Gtk::FlowBoxChild *child2) {
 }
 
 void frog::on_filebox_child_activated(Gtk::FlowBoxChild* child) {
-	file_entry *entry = dynamic_cast<file_entry*>(child->get_child());
+	file_entry *entry = dynamic_cast<file_entry*>(child);
 	std::string path = entry_path.get_buffer()->get_text().raw();
 
 	// TODO: Can't open folders from desktop mode
@@ -497,7 +515,7 @@ void frog::on_dispatcher_file_change() {
 		auto children = flowbox_files.get_children();
 		for (auto child : children) {
 			auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
-			auto f_entry = dynamic_cast<file_entry*>(fbox_child->get_child());
+			auto f_entry = dynamic_cast<file_entry*>(fbox_child);
 			if (f_entry->path == event_name) {
 				// Remove the popover if found
 				std::vector<Gtk::Widget*> f_entry_children = fbox_child->get_children();
@@ -525,31 +543,24 @@ void frog::on_dispatcher_disks_changed() {
 }
 
 void frog::create_file_entry(const std::filesystem::directory_entry &entry, const bool& load_thumbnail) {
-	file_entry *f_entry = Gtk::make_managed<file_entry>(this, entry);
-	Gtk::FlowBoxChild *fbox_child = Gtk::make_managed<Gtk::FlowBoxChild>();
+	loading_entries_mutex.lock();
+	Glib::MainContext::get_default()->invoke([&, entry]() {
+		file_entry *f_entry = Gtk::make_managed<file_entry>(this, entry);
 
-	fbox_child->set_size_request(file_entry_width, file_entry_height);
-	fbox_child->set_child(*f_entry);
-	fbox_child->set_focusable(false); // Fixes focus issue when renaming
-	fbox_child->set_valign(Gtk::Align::START);
+		Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
+		click_gesture->set_button(GDK_BUTTON_SECONDARY);
+		click_gesture->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &frog::on_right_clicked), f_entry));
+		f_entry->add_controller(click_gesture);
 
-	Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
-	click_gesture->set_button(GDK_BUTTON_SECONDARY);
-	click_gesture->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &frog::on_right_clicked), fbox_child));
-	f_entry->add_controller(click_gesture);
-
-	if (load_thumbnail)
-		f_entry->load_thumbnail();
-
-	Glib::signal_idle().connect_once([&, fbox_child] {
-		flowbox_files.append(*fbox_child);
+		flowbox_files.append(*f_entry);
+		loading_entries_mutex.unlock();
+		return false;
 	});
 }
 
 void frog::snapshot_vfunc(const Glib::RefPtr<Gtk::Snapshot>& snapshot) {
-	Glib::signal_idle().connect([&]() {
+	Glib::signal_idle().connect_once([&]() {
 		switch_layout();
-		return false;
 	});
 
 	// Render normally
