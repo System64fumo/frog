@@ -29,8 +29,7 @@ void frog::menu_file_setup() {
 	section1->append("Rename", "file.rename");
 	action_group->add_action("rename", [&](){
 		std::printf("Clicked: rename\n");
-		auto selected = flowbox_files.get_selected_children()[0];
-		auto f_entry = dynamic_cast<file_entry*>(selected->get_child());
+		auto f_entry = dynamic_cast<file_entry*>(flowbox_files.get_selected_children()[0]);
 		f_entry->label.start_editing();
 		f_entry->label.set_position(f_entry->label.get_text().length());
 	});
@@ -38,7 +37,7 @@ void frog::menu_file_setup() {
 	action_group->add_action("delete", [&](){
 		auto children = flowbox_files.get_selected_children();
 		for (const auto& child : children) {
-			auto file = dynamic_cast<file_entry*>(child->get_child());
+			auto file = dynamic_cast<file_entry*>(child);
 			std::filesystem::remove_all(file->path);
 		}
 	});
@@ -50,7 +49,7 @@ void frog::menu_file_setup() {
 
 		std::string content = "cut";
 		for (const auto &child : flowbox_files.get_selected_children()) {
-			auto file = dynamic_cast<file_entry*>(child->get_child());
+			auto file = dynamic_cast<file_entry*>(child);
 			content += "\nfile://" + file->path;
 		}
 
@@ -66,7 +65,7 @@ void frog::menu_file_setup() {
 
 		std::string content = "copy";
 		for (const auto &child : flowbox_files.get_selected_children()) {
-			auto file = dynamic_cast<file_entry*>(child->get_child());
+			auto file = dynamic_cast<file_entry*>(child);
 			content += "\nfile://" + file->path;
 		}
 
@@ -79,8 +78,7 @@ void frog::menu_file_setup() {
 	section3->append("Properties", "file.properties");
 	action_group->add_action("properties", [&](){
 		std::printf("Clicked: properties\n");
-		auto selected = flowbox_files.get_selected_children()[0];
-		auto f_entry = dynamic_cast<file_entry*>(selected->get_child());
+		auto f_entry = dynamic_cast<file_entry*>(flowbox_files.get_selected_children()[0]);
 		create_properties_dialog(f_entry);
 	});
 }
@@ -183,7 +181,7 @@ void frog::menu_dir_setup() {
 		auto selected = flowbox_files.get_selected_children();
 		file_entry* f_entry;
 		if (selected.size() > 0) {
-			f_entry = dynamic_cast<file_entry*>(selected[0]->get_child());
+			f_entry = dynamic_cast<file_entry*>(selected[0]);
 		}
 		else {
 			std::filesystem::directory_entry entry(current_path);

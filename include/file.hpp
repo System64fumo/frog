@@ -1,5 +1,6 @@
 #pragma once
 #include <gtkmm/box.h>
+#include <gtkmm/flowboxchild.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/image.h>
 #include <gtkmm/editablelabel.h>
@@ -8,7 +9,7 @@
 
 class frog;
 
-class file_entry : public Gtk::Box {
+class file_entry : public Gtk::FlowBoxChild {
 	public:
 		file_entry(frog*, const std::filesystem::directory_entry&);
 		~file_entry();
@@ -20,10 +21,10 @@ class file_entry : public Gtk::Box {
 		std::string file_icon;
 		int file_size;
 		int content_count;
+		Gtk::Box box_main;
 		Gtk::Image image;
 		Gtk::EditableLabel label;
 
-		void load_data();
 		void load_thumbnail();
 		void load_metadata();
 

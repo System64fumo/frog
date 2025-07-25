@@ -8,6 +8,7 @@ Sleek file manager written in gtkmm 4<br><br>
 > [!IMPORTANT]
 > This is heavily W.I.P<br>
 > Expect missing features.<br>
+> The frog may freeze sometimes as my powers are a little too strong.<br>
 
 ## Why does this exist?
 Primarily because i got tired of my current file manager freezing and crashing so often.<br>

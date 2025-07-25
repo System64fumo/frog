@@ -50,13 +50,12 @@ void frog::navigate_to_dir(std::filesystem::path fs_path) {
 	// TODO: This should also work for non current directory files
 	else if (!entry.is_directory()) {
 		for (auto* child : flowbox_files.get_children()) {
-			auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
-			auto* custom_widget = dynamic_cast<file_entry*>(fbox_child->get_child());
+			auto* custom_widget = dynamic_cast<file_entry*>(child);
 
 			if (custom_widget->path == path_str) {
-				flowbox_files.select_child(*fbox_child);
+				flowbox_files.select_child(*custom_widget);
 				auto vadjustment = scrolled_window_files.get_vadjustment();
-				vadjustment->set_value(fbox_child->get_allocation().get_y());
+				vadjustment->set_value(custom_widget->get_allocation().get_y());
 				entry_path.set_text(current_path.string());
 				return;
 			}
@@ -85,33 +84,60 @@ void frog::navigate_to_dir(std::filesystem::path fs_path) {
 	// Thank me later..
 	stop_flag.store(false);
 	async_task = std::async(std::launch::async, [&, fs_path]() {
-		// Phase 1: Get all files in current dir
+		// Phase 1: Get all files in current dir and sort them
 		generate_entry_autocomplete(fs_path.string());
-		for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(fs_path)) {
-			if (stop_flag.load())
-				break;
-
+		
+		// Collect all entries first
+		std::vector<std::filesystem::directory_entry> entries;
+		for (const auto& entry : std::filesystem::directory_iterator(fs_path)) {
+			if (stop_flag.load()) break;
+			entries.push_back(entry);
+		}
+		
+		// Sort entries according to the specified order
+		std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
+			bool a_is_dir = a.is_directory();
+			bool b_is_dir = b.is_directory();
+			bool a_is_hidden = a.path().filename().string()[0] == '.';
+			bool b_is_hidden = b.path().filename().string()[0] == '.';
+			
+			// Directories come before files
+			if (a_is_dir != b_is_dir) return a_is_dir > b_is_dir;
+			
+			// If both are directories or both are files
+			if (a_is_dir) {
+				// For directories, non-hidden come before hidden
+				if (a_is_hidden != b_is_hidden) return a_is_hidden < b_is_hidden;
+			} else {
+				// For files, non-hidden come before hidden
+				if (a_is_hidden != b_is_hidden) return a_is_hidden < b_is_hidden;
+			}
+			
+			// If same type and same visibility, sort alphabetically
+			return a.path().filename() < b.path().filename();
+		});
+		
+		// Process sorted entries
+		for (const auto& entry : entries) {
+			if (stop_flag.load()) break;
 			create_file_entry(entry, false);
 		}
+		
 		auto children = flowbox_files.get_children();
-
-		// TODO: Re enable this..
-		// Phase 2: Load data
-		/*for (auto child : children) {
-			if (stop_flag.load())
-				break;
-			auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
-			auto f_entry = dynamic_cast<file_entry*>(fbox_child->get_child());
-			f_entry->load_data();
-		}*/
 
 		// Phase 3: Load thumbnails
 		for (auto child : children) {
-			if (stop_flag.load())
-				break;
-			auto fbox_child = dynamic_cast<Gtk::FlowBoxChild*>(child);
-			auto f_entry = dynamic_cast<file_entry*>(fbox_child->get_child());
-			f_entry->load_thumbnail();
+			if (stop_flag.load()) break;
+			auto f_entry = dynamic_cast<file_entry*>(child);
+
+			// TODO: This causes massive slowdowns
+			// On the bright side it no longer leaks memory
+			loading_entries_mutex.lock();
+			Glib::MainContext::get_default()->invoke([&, f_entry]() {
+				f_entry->load_thumbnail();
+				loading_entries_mutex.unlock();
+				return false;
+			});
 		}
 	});
 

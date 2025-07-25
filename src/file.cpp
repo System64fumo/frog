@@ -16,14 +16,49 @@
 #include <gstreamer-1.0/gst/gst.h>
 #include <gst/video/video-info.h>
 
-file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry) : Gtk::Box(Gtk::Orientation::VERTICAL), win(win), file_size(0), content_count(0), label("Loading.."), entry(entry) {
-	get_style_context()->add_class("file_entry");
+file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry) : win(win), file_size(0), content_count(0), box_main(Gtk::Orientation::VERTICAL), entry(entry) {
+	path = entry.path();
+	file_name = entry.path().filename().string();
+	is_directory = entry.is_directory();
 
-	append(image);
+	set_size_request(win->file_entry_width, win->file_entry_height);
+	set_child(box_main);
+	set_focusable(false); // Fixes focus issue when renaming
+	set_valign(Gtk::Align::START);
+
+	box_main.get_style_context()->add_class("file_entry");
+
+	box_main.append(image);
 	image.set_pixel_size(win->file_icon_size);
-	image.set_from_icon_name("content-loading-symbolic");
 
-	append(label);
+	// TODO: Add option to show/hide hidden files
+	// TODO: Add option to enable/disable shadowing of hidden files
+	if (file_name[0] == '.')
+		image.set_opacity(0.75);
+
+	// Figure out what icon to use
+	if (is_directory) {
+		if (xdg_dirs[path] != "")
+			file_icon = xdg_dirs[path];
+		else
+			file_icon = "default-folder";
+	}
+	else {
+		const size_t& last_dot_pos = file_name.rfind('.');
+		file_icon = "application-blank";
+		if (last_dot_pos != std::string::npos) {
+			extension = file_name.substr(last_dot_pos + 1);
+			std::transform(extension.begin(), extension.end(), extension.begin(),
+				[](unsigned char c) { return std::tolower(c); });
+			const std::string& extension_icon = icon_from_extension[extension];
+			if (!extension_icon.empty())
+				file_icon = icon_from_extension[extension];
+		}
+	}
+	image.set_from_icon_name(file_icon);
+
+	box_main.append(label);
+	label.set_text(file_name);
 	label.set_halign(Gtk::Align::CENTER);
 	auto stack = dynamic_cast<Gtk::Stack*>(label.get_children()[1]);
 	auto ulabel = dynamic_cast<Gtk::Label*>(stack->get_children()[0]);
@@ -46,10 +81,6 @@ file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry)
 		}
 	});
 
-	is_directory = entry.is_directory();
-	file_icon = entry.is_directory() ? "folder" : "application-x-generic";
-	image.set_from_icon_name(file_icon);
-
 	// Set up drag and drop
 	source = Gtk::DragSource::create();
 	source->set_actions(Gdk::DragAction::MOVE);
@@ -61,7 +92,7 @@ file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry)
 
 		// TODO: Consider checking if the user has permission to move the files first?
 		for (const auto& selected_entry : selected_entries) {
-			auto slected_file_entry = dynamic_cast<file_entry*>(selected_entry->get_child());
+			auto slected_file_entry = dynamic_cast<file_entry*>(selected_entry);
 			GFile* file = g_file_new_for_path(slected_file_entry->path.c_str());
 			files.push_back(file);
 		}
@@ -79,80 +110,22 @@ file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry)
 	}, false);
 	add_controller(source);
 
-	// TODO: This is not supposed to run here..
-	load_data();
+	if (is_directory)
+		setup_drop_target();
 }
 
 file_entry::~file_entry() {
 	// TODO: Cleanup is still not perfect
-	pixbuf.reset();
 	image.clear();
+	pixbuf.reset();
 	pixbuf = nullptr;
-}
-
-void file_entry::load_data() {
-	path = entry.path();
-	file_name = entry.path().filename().string();
-
-	// TODO: Add option to show/hide hidden files
-	// TODO: Add option to enable/disable shadowing of hidden files
-	if (file_name[0] == '.')
-		image.set_opacity(0.75);
-
-	label.set_text(file_name);
-
-	// Figure out what icon to use
-	if (is_directory) {
-		if (xdg_dirs[path] != "")
-			file_icon = xdg_dirs[path];
-		else
-			file_icon = "default-folder";
-		setup_drop_target();
-	}
-	else {
-		const size_t& last_dot_pos = file_name.rfind('.');
-		if (last_dot_pos != std::string::npos) {
-			extension = file_name.substr(last_dot_pos + 1);
-			std::transform(extension.begin(), extension.end(), extension.begin(),
-				[](unsigned char c) { return std::tolower(c); });
-			const std::string& extension_icon = icon_from_extension[extension];
-			if (!extension_icon.empty())
-				file_icon = icon_from_extension[extension];
-			else
-				file_icon = "application-blank";
-		}
-		else {
-			// TODO: Re add magic file detection for fallback
-			file_icon = "application-blank";
-		}
-	}
-
-	// TODO: This takes far too long to compute
-	// Also uses a lot of ram per instance
-
-	// Load icons
-	auto icon_info = win->icon_theme->lookup_icon(file_icon, win->file_icon_size);
-	auto file = icon_info->get_file();
-	auto icon = Gdk::Texture::create_from_file(file);
-
-	image.set(icon);
-	source->set_icon(icon, win->file_icon_size / 2, win->file_icon_size / 2);
-	icon.reset();
 }
 
 void file_entry::load_thumbnail() {
 	// TODO: SVGS look terrible
 	// TODO: Maybe consider animated gifs?
 	if (icon_from_extension[extension].find("image") != std::string::npos) {
-		try {
-			pixbuf = Gdk::Pixbuf::create_from_file(path);
-		}
-		catch (const Gdk::PixbufError& e) {
-			std::fprintf(stderr, "Unable to generate a thumbnail for file: %s\n", path.c_str());
-			pixbuf.reset();
-			pixbuf = nullptr;
-			return;
-		}
+		pixbuf = Gdk::Pixbuf::create_from_file(path);
 	}
 	else if (icon_from_extension[extension].find("video") != std::string::npos && false) { // Temporarily disabled because it's buggy
 		GstElement* pipeline;
@@ -202,6 +175,7 @@ void file_entry::load_thumbnail() {
 		return;
 
 	image.set(resize_thumbnail(pixbuf));
+	source->set_icon(image.get_paintable(), win->file_icon_size / 2, win->file_icon_size / 2);
 	pixbuf.reset();
 }
 
