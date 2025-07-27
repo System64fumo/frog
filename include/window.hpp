@@ -27,6 +27,10 @@ class frog : public Gtk::Window {
 	public:
 		frog();
 		Glib::RefPtr<Gtk::IconTheme> icon_theme;
+		Gtk::PopoverMenu popovermenu_file_entry_menu;
+		Gtk::PopoverMenu popovermenu_context_menu;
+		Glib::RefPtr<Gio::Menu> menu_file;
+		Glib::RefPtr<Gio::Menu> menu_dir;
 
 		config_parser* config;
 		int collapse_width = 480;
@@ -87,10 +91,6 @@ class frog : public Gtk::Window {
 		Glib::Dispatcher dispatcher_file_change;
 		Gtk::Button button_dummy;
 
-		Glib::RefPtr<Gio::Menu> menu_file;
-		Glib::RefPtr<Gio::Menu> menu_dir;
-		Gtk::PopoverMenu popovermenu_context_menu;
-
 		void on_entry_done();
 		void on_entry_changed();
 		void generate_entry_autocomplete(const std::string& path);
@@ -100,7 +100,6 @@ class frog : public Gtk::Window {
 		void on_dispatcher_disks_changed();
 		void on_filebox_child_activated(Gtk::FlowBoxChild* child);
 		void on_places_child_activated(Gtk::FlowBoxChild* child);
-		void on_right_clicked(const int &n_press, const double &x, const double &y, Gtk::FlowBoxChild *flowbox_child);
 		bool on_key_press(const guint &keyval, const guint &keycode, const Gdk::ModifierType &state);
 		void switch_layout();
 
@@ -108,8 +107,6 @@ class frog : public Gtk::Window {
 		void sidebar_setup();
 		void menu_file_setup();
 		void menu_dir_setup();
-		void create_properties_dialog(file_entry*);
-		void create_file_entry(const std::filesystem::directory_entry&, const bool&);
 
 		void navigate_hist_previous();
 		void navigate_hist_forward();

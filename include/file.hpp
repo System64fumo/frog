@@ -35,6 +35,7 @@ class file_entry : public Gtk::FlowBoxChild {
 
 		std::string extension;
 
+		void on_right_clicked(const int &n_press, const double &x, const double &y);
 		Glib::RefPtr<Gdk::Pixbuf> resize_thumbnail(const Glib::RefPtr<Gdk::Pixbuf>&);
 		void setup_drop_target();
 };

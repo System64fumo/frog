@@ -112,6 +112,12 @@ file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry)
 
 	if (is_directory)
 		setup_drop_target();
+
+	// Context menu
+	Glib::RefPtr<Gtk::GestureClick> click_gesture = Gtk::GestureClick::create();
+	click_gesture->set_button(GDK_BUTTON_SECONDARY);
+	click_gesture->signal_pressed().connect(sigc::mem_fun(*this, &file_entry::on_right_clicked));
+	add_controller(click_gesture);
 }
 
 file_entry::~file_entry() {
@@ -180,6 +186,9 @@ void file_entry::load_thumbnail() {
 }
 
 void file_entry::load_metadata() {
+	file_size = 0;
+	content_count = 0;
+
 	// TODO: Set a recursion limit
 	// TODO: Find a way to get the real size of pseudo fs?
 	if (is_directory) {
@@ -206,6 +215,8 @@ void file_entry::load_metadata() {
 		}
 	}
 	// TODO: Add more metadata stuff (Image size, Video length, Ect..)
+	// TODO: Add time stuff
+	// TODO: Add permission stuff
 }
 
 Glib::RefPtr<Gdk::Pixbuf> file_entry::resize_thumbnail(const Glib::RefPtr<Gdk::Pixbuf>& pixbuf) {
@@ -241,4 +252,25 @@ void file_entry::setup_drop_target() {
 		return true;
 	}, false);
 	add_controller(target);
+}
+
+void file_entry::on_right_clicked(const int &n_press,
+							const double &x,
+							const double &y) {
+
+	// TODO: Handle multi selection right clicks
+	// Check if the child is in the selection
+	auto parent = dynamic_cast<Gtk::FlowBox*>(get_parent());
+	auto children = parent->get_selected_children();
+	if (std::find(children.begin(), children.end(), this) == children.end())
+		parent->unselect_all();
+
+	parent->select_child(*this);
+
+	Gdk::Rectangle rect(get_width() / 2, get_height() / 2, 0, 0);
+	win->popovermenu_file_entry_menu.unparent();
+	win->popovermenu_file_entry_menu.set_parent(*this);
+	win->popovermenu_file_entry_menu.set_pointing_to(rect);
+	win->popovermenu_file_entry_menu.set_menu_model(win->menu_file);
+	win->popovermenu_file_entry_menu.popup();
 }
