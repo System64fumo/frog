@@ -1,13 +1,10 @@
 #include "window.hpp"
 #include "file.hpp"
 #include "utils.hpp"
+#include "properties_dialog.hpp"
 
 #include <fstream>
 #include <algorithm>
-#include <gtkmm/dialog.h>
-#include <gtkmm/label.h>
-#include <gtkmm/icontheme.h>
-#include <gtkmm/centerbox.h>
 
 void frog::menu_file_setup() {
 	menu_file = Gio::Menu::create();
@@ -79,7 +76,10 @@ void frog::menu_file_setup() {
 	action_group->add_action("properties", [&](){
 		std::printf("Clicked: properties\n");
 		auto f_entry = dynamic_cast<file_entry*>(flowbox_files.get_selected_children()[0]);
-		create_properties_dialog(f_entry);
+
+		auto dialog = Gtk::make_managed<properties_dialog>(f_entry);
+		dialog->set_transient_for(*this);
+		dialog->show();
 	});
 }
 
@@ -187,88 +187,109 @@ void frog::menu_dir_setup() {
 			std::filesystem::directory_entry entry(current_path);
 			f_entry = Gtk::make_managed<file_entry>(this, entry);
 		}
-		create_properties_dialog(f_entry);
+
+		auto dialog = Gtk::make_managed<properties_dialog>(f_entry);
+		dialog->set_transient_for(*this);
+		dialog->show();
 	});
 }
 
-void frog::on_right_clicked(const int &n_press,
-							const double &x,
-							const double &y,
-							Gtk::FlowBoxChild *flowbox_child) {
-
-	// TODO: Handle multi selection right clicks
-	// Check if the child is in the selection
-	auto children = flowbox_files.get_selected_children();
-	if (std::find(children.begin(), children.end(), flowbox_child) == children.end())
-		flowbox_files.unselect_all();
-
-	flowbox_files.select_child(*flowbox_child);
-
-	Gdk::Rectangle rect(flowbox_child->get_width() / 2, flowbox_child->get_height() / 2, 0, 0);
-	popovermenu_context_menu.unparent();
-	popovermenu_context_menu.set_parent(*flowbox_child);
-	popovermenu_context_menu.set_pointing_to(rect);
-	popovermenu_context_menu.set_menu_model(menu_file);
-	popovermenu_context_menu.popup();
-}
-
-void add_property(Gtk::Box* container, Gtk::Widget* name, Gtk::Widget* value) {
-	Gtk::CenterBox* centerbox_property= Gtk::make_managed<Gtk::CenterBox>();
-	centerbox_property->get_style_context()->add_class("property");
-	centerbox_property->set_start_widget(*name);
-	centerbox_property->set_end_widget(*value);
-	container->append(*centerbox_property);
-}
-
-void frog::create_properties_dialog(file_entry* f_entry) {
-	// TODO: Lazy load metadata
-	f_entry->load_metadata();
-
-	Gtk::Dialog* dialog = Gtk::make_managed<Gtk::Dialog>();
-	Gtk::Box* box_content = dialog->get_content_area();
-	dialog->set_transient_for(*this);
-	dialog->set_default_size(300, 400);
+properties_dialog::properties_dialog(file_entry* f_entry) {
+	set_default_size(300, 400);
+	box_main = get_content_area();
 
 	// Preview
-	Gtk::Box* box_preview = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-	Gtk::Label* label_file_name = Gtk::make_managed<Gtk::Label>(f_entry->file_name);
-	label_file_name->set_wrap_mode(Pango::WrapMode::WORD_CHAR);
-	label_file_name->set_ellipsize(Pango::EllipsizeMode::END);
-	label_file_name->set_max_width_chars(10);
-	label_file_name->set_lines(2);
+	box_main->append(box_preview);
+	box_preview.set_orientation(Gtk::Orientation::VERTICAL);
+	box_preview.set_margin_top(32);
+	box_preview.set_margin_bottom(22);
+	box_preview.append(image_preview);
+	box_preview.append(label_preview);
 
 	// Icon
-	Gtk::Image* image_icon = Gtk::make_managed<Gtk::Image>();
-	image_icon->set_pixel_size(64);
-	auto icon_theme = Gtk::IconTheme::get_for_display(Gdk::Display::get_default());
-	auto icon_info = icon_theme->lookup_icon(f_entry->file_icon, file_icon_size);
-	auto file = icon_info->get_file();
-	auto icon = Gdk::Texture::create_from_file(file);
-	image_icon->set(icon);
+	image_preview.set_pixel_size(64);
+	image_preview.set_from_icon_name(f_entry->file_icon);
 
-	box_preview->set_margin_top(32);
-	box_preview->set_margin_bottom(32);
-	box_preview->append(*image_icon);
-	box_preview->append(*label_file_name);
-	box_content->append(*box_preview);
+	// Label
+	label_preview.set_text(f_entry->file_name);
+	label_preview.set_wrap_mode(Pango::WrapMode::WORD_CHAR);
+	label_preview.set_ellipsize(Pango::EllipsizeMode::END);
+	label_preview.set_max_width_chars(10);
+	label_preview.set_lines(2);
 
-	Gtk::Box* box_details = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-	box_details->set_size_request(280, -1);
-	box_details->get_style_context()->add_class("card");
-	box_details->set_hexpand(true);
-	box_details->set_halign(Gtk::Align::CENTER);
-	box_details->set_valign(Gtk::Align::START);
 
-	Gtk::Label* label_size_title = Gtk::make_managed<Gtk::Label>("Size");
-	Gtk::Label* label_size_content = Gtk::make_managed<Gtk::Label>(to_human_readable(f_entry->file_size));
-	add_property(box_details, label_size_title, label_size_content);
 
-	if (f_entry->is_directory) {
-		Gtk::Label* label_size_title = Gtk::make_managed<Gtk::Label>("Content");
-		Gtk::Label* label_size_content = Gtk::make_managed<Gtk::Label>(std::to_string(f_entry->content_count));
-		add_property(box_details, label_size_title, label_size_content);
-	}
+	// General
+	auto card_general = create_card();
+	box_main->append(*card_general);
+	centerbox_type = add_property_text(card_general, "Type");
+	centerbox_size = add_property_text(card_general, "Size");
+	if (f_entry->is_directory)
+		centerbox_content = add_property_text(card_general, "Content");
 
-	box_content->append(*box_details);
-	dialog->show();
+	// Time
+	auto card_time = create_card();
+	box_main->append(*card_time);
+	centerbox_created = add_property_text(card_time, "Created");
+	centerbox_modified = add_property_text(card_time, "Modified");
+	centerbox_accessed = add_property_text(card_time, "Accessed");
+
+	// Permissions
+
+	dispatcher.connect([&, f_entry]() {
+		auto label_size = dynamic_cast<Gtk::Label*>(centerbox_size->get_end_widget());
+		label_size->set_text(to_human_readable(f_entry->file_size));
+
+		auto label_type = dynamic_cast<Gtk::Label*>(centerbox_type->get_end_widget());
+		if (f_entry->is_directory) {
+			auto label_content = dynamic_cast<Gtk::Label*>(centerbox_content->get_end_widget());
+			label_content->set_text(std::to_string(f_entry->content_count));
+			label_type->set_text("Directory");
+		}
+		else {
+			label_type->set_text("File"); // TODO: Read actual file type
+		}
+
+		// TODO: Implement time stuff
+		// TODO: Implement permission stuff
+	});
+
+	// TODO: Make this smoother/better
+	// TODO: Make the thread stop when the dialog is closed
+	std::thread([&, f_entry]() {
+		f_entry->load_metadata();
+		dispatcher.emit();
+	}).detach();
+}
+
+Gtk::Box* properties_dialog::create_card() {
+	Gtk::Box* card = Gtk::make_managed<Gtk::Box>();
+	card->set_orientation(Gtk::Orientation::VERTICAL);
+	card->set_size_request(280, -1);
+	card->get_style_context()->add_class("card");
+	card->set_hexpand(true);
+	card->set_margin(10);
+	card->set_halign(Gtk::Align::CENTER);
+	card->set_valign(Gtk::Align::START);
+	return card;
+}
+
+Gtk::CenterBox* properties_dialog::add_property(Gtk::Box* container, Gtk::Widget* name, Gtk::Widget* value) {
+	Gtk::CenterBox* centerbox = Gtk::make_managed<Gtk::CenterBox>();
+	centerbox->get_style_context()->add_class("property");
+	centerbox->set_start_widget(*name);
+	centerbox->set_end_widget(*value);
+	container->append(*centerbox);
+	return centerbox;
+}
+
+Gtk::CenterBox* properties_dialog::add_property_text(Gtk::Box* container, std::string title, std::string content) {
+	Gtk::CenterBox* centerbox = Gtk::make_managed<Gtk::CenterBox>();
+	Gtk::Label* label_title = Gtk::make_managed<Gtk::Label>(title);
+	Gtk::Label* label_content = Gtk::make_managed<Gtk::Label>(content);
+	centerbox->get_style_context()->add_class("property");
+	centerbox->set_start_widget(*label_title);
+	centerbox->set_end_widget(*label_content);
+	container->append(*centerbox);
+	return centerbox;
 }

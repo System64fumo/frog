@@ -75,7 +75,7 @@ void frog::navigate_to_dir(std::filesystem::path fs_path) {
 	}
 
 	// Cleanup
-	popovermenu_context_menu.unparent();
+	popovermenu_file_entry_menu.unparent();
 	flowbox_files.remove_all();
 
 
@@ -120,7 +120,13 @@ void frog::navigate_to_dir(std::filesystem::path fs_path) {
 		// Process sorted entries
 		for (const auto& entry : entries) {
 			if (stop_flag.load()) break;
-			create_file_entry(entry, false);
+			loading_entries_mutex.lock();
+			Glib::MainContext::get_default()->invoke([&, entry]() {
+				file_entry *f_entry = Gtk::make_managed<file_entry>(this, entry);
+				flowbox_files.append(*f_entry);
+				loading_entries_mutex.unlock();
+				return false;
+			});
 		}
 		
 		auto children = flowbox_files.get_children();
