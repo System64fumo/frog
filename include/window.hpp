@@ -22,6 +22,7 @@
 class config_parser;
 class directory_watcher;
 class file_entry;
+class disk_manager;
 
 class frog : public Gtk::Window {
 	public:
@@ -31,6 +32,7 @@ class frog : public Gtk::Window {
 		Gtk::PopoverMenu popovermenu_context_menu;
 		Glib::RefPtr<Gio::Menu> menu_file;
 		Glib::RefPtr<Gio::Menu> menu_dir;
+		Gtk::FlowBox flowbox_files;
 
 		config_parser* config;
 		int collapse_width = 480;
@@ -53,6 +55,7 @@ class frog : public Gtk::Window {
 		bool sidebar_should_hide = true;
 
 		directory_watcher *watcher = nullptr;
+		disk_manager* dm = nullptr;
 
 		Gtk::Overlay overlay_main;
 		Gtk::Box box_overlay;
@@ -85,7 +88,6 @@ class frog : public Gtk::Window {
 		ModelColumns columns;
 
 		Gtk::ScrolledWindow scrolled_window_files;
-		Gtk::FlowBox flowbox_files;
 		Glib::Dispatcher dispatcher_file;
 		Glib::Dispatcher dispatcher_file_thumbnail;
 		Glib::Dispatcher dispatcher_file_change;

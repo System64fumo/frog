@@ -63,7 +63,7 @@ void disk_manager::get_disks() {
 			std::string partition_name = partition_entry.path().filename();
 
 			// Filter out non partition dirs
-			if (partition_name.find(disk_name))
+			if (partition_name.find(disk_name) == std::string::npos)
 				continue;
 
 			partition new_partition = create_partition(partition_name);
@@ -173,11 +173,11 @@ void disk_manager::get_mounts() {
 
 void disk_manager::on_disk_event(const std::string& devnode, const bool& add) {
 	std::string parent_dev;
-	if (!devnode.find("sd"))
+	if (devnode.find("sd") == 0)
 		parent_dev = devnode.substr(0, 3);
-	else if (!devnode.find("mmcblk"))
+	else if (devnode.find("mmcblk") == 0)
 		parent_dev = devnode.substr(0, 7);
-	else if (!devnode.find("nvme"))
+	else if (devnode.find("nvme") == 0)
 		parent_dev = devnode.substr(0, 7);
 
 	bool is_partition = (devnode != parent_dev);
@@ -256,11 +256,11 @@ disk_manager::partition disk_manager::create_partition(const std::string& devnod
 	// Get parent
 	// TODO: This could probably be better by matching the first 2 letters and itterating over every disk
 	std::string parent_dev;
-	if (!new_partition.name.find("sd"))
+	if (new_partition.name.find("sd") == 0)
 		parent_dev = new_partition.name.substr(0, 3);
-	else if (!new_partition.name.find("mmcblk"))
+	else if (new_partition.name.find("mmcblk") == 0)
 		parent_dev = new_partition.name.substr(0, 6);
-	else if (!new_partition.name.find("nvme"))
+	else if (new_partition.name.find("nvme") == 0)
 		parent_dev = new_partition.name.substr(0, 4);
 
 	// Check if the partition is encrypted
@@ -269,44 +269,65 @@ disk_manager::partition disk_manager::create_partition(const std::string& devnod
 		for (const auto& entry : std::filesystem::directory_iterator(holder_path)) {
 			if (std::filesystem::is_directory(entry)) {
 				std::ifstream file(entry.path().string() + "/dm/name");
-				std::stringstream buffer;
-				buffer << file.rdbuf();
-				new_partition.name = "mapper/" + buffer.str().substr(0, buffer.str().size() - 1);
+				if (file.is_open()) {
+					std::stringstream buffer;
+					buffer << file.rdbuf();
+					std::string holder_name = buffer.str();
+					if (!holder_name.empty() && holder_name.back() == '\n')
+						holder_name.pop_back();
+					new_partition.holder = "mapper/" + holder_name;
+				}
 			}
 		}
 	}
+	
 	new_partition.mount_path = mounts[new_partition.name];
-
 	bool mounted = !new_partition.mount_path.empty();
-	blkid_probe pr = blkid_new_probe_from_filename(("/dev/" + new_partition.name).c_str());
 
-	blkid_probe_enable_partitions(pr, true);
-	blkid_probe_set_superblocks_flags(pr, BLKID_SUBLKS_TYPE | BLKID_SUBLKS_LABEL);
-	blkid_do_fullprobe(pr);
-
-	const char* pl = nullptr;
-	blkid_probe_lookup_value(pr, "LABEL", &pl, nullptr);
-	new_partition.label = (pl != nullptr) ? std::string(pl) : "Unknown";
-
-	const char* pt = nullptr;
-	blkid_probe_lookup_value(pr, "TYPE", &pt, nullptr);
-	new_partition.type = (pt != nullptr) ? std::string(pt) : "Unknown Type";
-
-	// Cleanup
-	blkid_free_probe(pr);
-
-	new_partition.used_bytes = 0;
+	// Initialize with default values
+	new_partition.label = "Unknown";
+	new_partition.type = "Unknown Type";
+	new_partition.total_bytes = 0;
 	new_partition.free_bytes = 0;
 	new_partition.used_bytes = 0;
+
+	// Only try to probe if the device file exists
+	std::string device_path = "/dev/" + new_partition.name;
+	if (std::filesystem::exists(device_path)) {
+		blkid_probe pr = blkid_new_probe_from_filename(device_path.c_str());
+		if (pr != nullptr) {
+			blkid_probe_enable_partitions(pr, true);
+			blkid_probe_set_superblocks_flags(pr, BLKID_SUBLKS_TYPE | BLKID_SUBLKS_LABEL);
+			
+			if (blkid_do_fullprobe(pr) == 0) {
+				const char* pl = nullptr;
+				if (blkid_probe_lookup_value(pr, "LABEL", &pl, nullptr) == 0) {
+					new_partition.label = (pl != nullptr) ? std::string(pl) : "Unknown";
+				}
+
+				const char* pt = nullptr;
+				if (blkid_probe_lookup_value(pr, "TYPE", &pt, nullptr) == 0) {
+					new_partition.type = (pt != nullptr) ? std::string(pt) : "Unknown Type";
+				}
+			}
+			blkid_free_probe(pr);
+		}
+	}
+
 	if (mounted) {
 		struct statvfs stats;
-		if (!new_partition.holder.empty())
-			statvfs(mounts[new_partition.holder].c_str(), &stats);
-		else
-			statvfs(mounts[new_partition.name].c_str(), &stats);
-		new_partition.total_bytes = stats.f_blocks * stats.f_frsize;
-		new_partition.free_bytes = stats.f_bfree * stats.f_frsize;
-		new_partition.used_bytes = new_partition.total_bytes - new_partition.free_bytes;
+		std::string mount_path_to_use = new_partition.mount_path;
+		
+		// Use holder's mount path if available
+		if (!new_partition.holder.empty() && mounts.find(new_partition.holder) != mounts.end()) {
+			mount_path_to_use = mounts[new_partition.holder];
+		}
+		
+		if (statvfs(mount_path_to_use.c_str(), &stats) == 0) {
+			new_partition.total_bytes = stats.f_blocks * stats.f_frsize;
+			new_partition.free_bytes = stats.f_bfree * stats.f_frsize;
+			new_partition.used_bytes = new_partition.total_bytes - new_partition.free_bytes;
+		}
 
 		if (new_partition.label == "Unknown" && !new_partition.mount_path.empty()) {
 			if (new_partition.mount_path == "/")

@@ -85,8 +85,8 @@ file_entry::file_entry(frog* win, const std::filesystem::directory_entry &entry)
 	source = Gtk::DragSource::create();
 	source->set_actions(Gdk::DragAction::MOVE);
 
-	source->signal_prepare().connect([&](const double &x, const double &y) {
-		auto flowbox = dynamic_cast<Gtk::FlowBox*>(get_parent()->get_parent());
+	auto flowbox = &win->flowbox_files;
+	source->signal_prepare().connect([&, flowbox](const double &x, const double &y) {
 		auto selected_entries = flowbox->get_selected_children();
 		std::vector<GFile*> files;
 
